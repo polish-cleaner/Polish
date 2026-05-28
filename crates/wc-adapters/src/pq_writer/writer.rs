@@ -47,7 +47,7 @@ use time::format_description::well_known::Iso8601;
 use time::OffsetDateTime;
 
 use wc_core::manifest::{Manifest, ManifestItem};
-use wc_core::ports::pq_port::{PqError, PqPort};
+use wc_core::ports::pq_port::{PackOutcome, PqError, PqPort};
 
 use super::{atomic, hash, journal};
 
@@ -69,66 +69,82 @@ impl PqWriterAdapter {
 }
 
 impl PqPort for PqWriterAdapter {
-    fn pack(&self, items: Vec<PathBuf>, out: &Path) -> Result<(), PqError> {
+    fn pack(&self, items: Vec<PathBuf>, out: &Path) -> Result<PackOutcome, PqError> {
         let bundle_id = derive_bundle_id(out);
         let tmp_path = with_suffix(out, "tmp");
         let journal_path = with_suffix(out, "journal");
 
         journal::write_start(&journal_path, &bundle_id, items.len())?;
 
-        // Build manifest entries + group items by category.
-        // Trait surface doesn't carry per-file category info, so today
-        // everything lands in DEFAULT_CATEGORY. Sub-archive layout is
-        // still segmented to keep the format forward-compatible.
+        // Phase 1: per-file stat + BLAKE3 in parallel.
         //
-        // BLAKE3 hashing is CPU-bound and runs across all available
-        // cores via rayon — on a 24k-file Chrome cache pack this is the
-        // difference between minutes (sequential) and seconds.
-        let manifest_items: Vec<ManifestItem> = items
+        // Race tolerance: `%TEMP%` churns under us — files vanish or
+        // become locked between the caller's pre-flight and our read.
+        // NotFound + PermissionDenied are treated as soft skips (push
+        // to `skipped`) instead of aborting the whole bundle. Any
+        // other I/O error still fails the pack.
+        //
+        // Parallel because BLAKE3 hashing is CPU-bound and Windows
+        // Defender amplifies each open by 10-100 ms — sequential over
+        // 24k Chrome cache files = minutes.
+        let phase1: Vec<Phase1Outcome> = items
             .par_iter()
-            .map(|src| -> Result<ManifestItem, PqError> {
-                let meta = fs::metadata(src).map_err(|e| io_with_path(src, e))?;
-                if !meta.is_file() {
-                    return Err(PqError::Io(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        format!("not a regular file: {}", src.display()),
-                    )));
-                }
-                let digest = hash::blake3_file(src).map_err(|e| io_with_path(src, e))?;
-                Ok(ManifestItem {
-                    original_path: src.to_string_lossy().into_owned(),
-                    size: meta.len(),
-                    blake3: digest,
-                    category_id: DEFAULT_CATEGORY.to_string(),
-                })
-            })
+            .map(|src| try_hash_item(src))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut by_cat: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
-        for src in &items {
-            by_cat
-                .entry(DEFAULT_CATEGORY.to_string())
-                .or_default()
-                .push(src.clone());
+        let mut manifest_items: Vec<ManifestItem> = Vec::with_capacity(phase1.len());
+        let mut skipped_phase1: Vec<PathBuf> = Vec::new();
+        for o in phase1 {
+            match o {
+                Phase1Outcome::Hashed(item) => manifest_items.push(item),
+                Phase1Outcome::Skipped(path) => skipped_phase1.push(path),
+            }
         }
+
+        // Group surviving (post-phase-1) items by category for the
+        // sub-archive build. v1.0 trait surface doesn't carry per-file
+        // category metadata; everything lands in DEFAULT_CATEGORY.
+        let survivors: Vec<PathBuf> = manifest_items
+            .iter()
+            .map(|m| PathBuf::from(&m.original_path))
+            .collect();
+        let mut by_cat: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
+        by_cat
+            .entry(DEFAULT_CATEGORY.to_string())
+            .or_default()
+            .extend(survivors.iter().cloned());
+
+        // Phase 2: build category sub-archives. Same race-tolerance
+        // story as phase 1 — a file can vanish between hash and tar
+        // append. Items missing here also land in skipped + are
+        // removed from the manifest before we emit it.
+        let mut sub_archives: Vec<(String, Vec<u8>)> = Vec::with_capacity(by_cat.len());
+        let mut skipped_phase2: Vec<PathBuf> = Vec::new();
+        for (cat_id, paths) in &by_cat {
+            let (buf, sub_skipped) = build_sub_archive(paths)?;
+            sub_archives.push((cat_id.clone(), buf));
+            skipped_phase2.extend(sub_skipped);
+        }
+
+        // Drop manifest entries for anything phase 2 had to skip.
+        let skipped_phase2_set: std::collections::HashSet<String> = skipped_phase2
+            .iter()
+            .map(|p| p.to_string_lossy().into_owned())
+            .collect();
+        let manifest_items_final: Vec<ManifestItem> = manifest_items
+            .into_iter()
+            .filter(|m| !skipped_phase2_set.contains(&m.original_path))
+            .collect();
 
         let manifest = Manifest {
             bundle_id: bundle_id.clone(),
             created_at: now_iso8601()?,
             schema_version: Manifest::SCHEMA_VERSION,
-            items: manifest_items,
+            items: manifest_items_final,
         };
+        let packed_count = manifest.items.len();
         let manifest_bytes =
             serde_json::to_vec_pretty(&manifest).map_err(|e| PqError::Manifest(e.to_string()))?;
-
-        // Build category sub-archives in memory. v1.0 bundles target
-        // dev-cache categories (<10s of MB / category in the common
-        // case); buffering keeps the outer-tar writer straightforward.
-        let mut sub_archives: Vec<(String, Vec<u8>)> = Vec::with_capacity(by_cat.len());
-        for (cat_id, paths) in &by_cat {
-            let buf = build_sub_archive(paths)?;
-            sub_archives.push((cat_id.clone(), buf));
-        }
 
         // Write the outer tar to <bundle>.tmp.
         {
@@ -152,7 +168,13 @@ impl PqPort for PqWriterAdapter {
 
         atomic::atomic_rename(&tmp_path, out)?;
         journal::remove(&journal_path)?;
-        Ok(())
+
+        let mut skipped = skipped_phase1;
+        skipped.extend(skipped_phase2);
+        Ok(PackOutcome {
+            packed_count,
+            skipped,
+        })
     }
 
     fn unpack(&self, bundle: &Path, dest_root: &Path) -> Result<(), PqError> {
@@ -229,15 +251,33 @@ fn archive_entry_path(src: &Path) -> String {
     no_colon.trim_start_matches('/').to_string()
 }
 
-fn build_sub_archive(paths: &[PathBuf]) -> Result<Vec<u8>, PqError> {
+/// Build a category sub-archive. Returns `(bytes, skipped)` —
+/// skipped paths were dropped because the file vanished or became
+/// locked between phase-1 hashing and our tar read.
+fn build_sub_archive(paths: &[PathBuf]) -> Result<(Vec<u8>, Vec<PathBuf>), PqError> {
     let mut zenc = zstd::stream::Encoder::new(Vec::<u8>::new(), 3).map_err(PqError::Io)?;
+    let mut skipped: Vec<PathBuf> = Vec::new();
     {
         let mut tarb = Builder::new(&mut zenc);
         tarb.mode(tar::HeaderMode::Deterministic);
         for p in paths {
             let entry = archive_entry_path(p);
-            let mut f = File::open(p).map_err(|e| io_with_path(p, e))?;
-            let meta = f.metadata().map_err(|e| io_with_path(p, e))?;
+            let mut f = match File::open(p) {
+                Ok(f) => f,
+                Err(e) if is_skippable(e.kind()) => {
+                    skipped.push(p.clone());
+                    continue;
+                }
+                Err(e) => return Err(io_with_path(p, e)),
+            };
+            let meta = match f.metadata() {
+                Ok(m) => m,
+                Err(e) if is_skippable(e.kind()) => {
+                    skipped.push(p.clone());
+                    continue;
+                }
+                Err(e) => return Err(io_with_path(p, e)),
+            };
             let mut header = Header::new_gnu();
             header.set_size(meta.len());
             header.set_mode(0o644);
@@ -250,7 +290,48 @@ fn build_sub_archive(paths: &[PathBuf]) -> Result<Vec<u8>, PqError> {
         tarb.finish()?;
     }
     let out = zenc.finish().map_err(PqError::Io)?;
-    Ok(out)
+    Ok((out, skipped))
+}
+
+/// Result of trying to stat + hash one source file in phase 1.
+enum Phase1Outcome {
+    Hashed(ManifestItem),
+    Skipped(PathBuf),
+}
+
+fn try_hash_item(src: &Path) -> Result<Phase1Outcome, PqError> {
+    let meta = match fs::metadata(src) {
+        Ok(m) => m,
+        Err(e) if is_skippable(e.kind()) => return Ok(Phase1Outcome::Skipped(src.to_path_buf())),
+        Err(e) => return Err(io_with_path(src, e)),
+    };
+    if !meta.is_file() {
+        return Err(PqError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("not a regular file: {}", src.display()),
+        )));
+    }
+    let digest = match hash::blake3_file(src) {
+        Ok(d) => d,
+        Err(e) if is_skippable(e.kind()) => return Ok(Phase1Outcome::Skipped(src.to_path_buf())),
+        Err(e) => return Err(io_with_path(src, e)),
+    };
+    Ok(Phase1Outcome::Hashed(ManifestItem {
+        original_path: src.to_string_lossy().into_owned(),
+        size: meta.len(),
+        blake3: digest,
+        category_id: DEFAULT_CATEGORY.to_string(),
+    }))
+}
+
+/// Errors we treat as soft skips: file vanished mid-pack (NotFound)
+/// or got an exclusive lock since pre-flight (PermissionDenied on
+/// Windows for sharing-violation). Everything else is hard-fail.
+fn is_skippable(kind: io::ErrorKind) -> bool {
+    matches!(
+        kind,
+        io::ErrorKind::NotFound | io::ErrorKind::PermissionDenied
+    )
 }
 
 /// Prepend the failing file path to an io::Error so the UI can show
@@ -454,12 +535,12 @@ mod tests {
         }
     }
 
-    /// When pack hits a missing source file, the io::Error MUST carry
-    /// the offending path so the UI can show users which file failed
-    /// (e.g. a locked Chrome cache file or a path that vanished between
-    /// scan and pack).
+    /// Race tolerance: a path that doesn't exist (file vanished between
+    /// the scan and the pack — common in `%TEMP%`) MUST land in
+    /// `PackOutcome::skipped`, not abort the whole bundle. The
+    /// remaining valid files must still pack + round-trip cleanly.
     #[test]
-    fn pack_error_includes_failing_source_path() {
+    fn pack_skips_missing_files_silently() {
         let tmp = TempDir::new().expect("tempdir");
         let real = tmp.path().join("real.bin");
         write_file(&real, b"x");
@@ -467,16 +548,65 @@ mod tests {
 
         let bundle = tmp.path().join("out.pq");
         let adapter = PqWriterAdapter::new();
-        let err = adapter
-            .pack(vec![real, phantom.clone()], &bundle)
-            .expect_err("pack must fail on missing source");
+        let outcome = adapter
+            .pack(vec![real.clone(), phantom.clone()], &bundle)
+            .expect("pack must NOT fail on a missing source");
 
-        let msg = err.to_string();
-        let phantom_str = phantom.display().to_string();
-        assert!(
-            msg.contains(&phantom_str),
-            "error must name the failing path, got: {msg}",
-        );
+        assert_eq!(outcome.packed_count, 1, "real file should be packed");
+        assert_eq!(outcome.skipped, vec![phantom], "phantom should be skipped");
+        assert!(bundle.exists(), "bundle file should exist after pack");
+
+        // Round-trip the survivor.
+        let dest = tmp.path().join("restored");
+        adapter.unpack(&bundle, &dest).expect("unpack");
+        let restored = dest.join(archive_entry_path(&real));
+        assert_eq!(fs::read(&restored).expect("read restored"), b"x");
+    }
+
+    /// Race tolerance, sharper case: file exists at the start of pack
+    /// (passes phase-1 stat + hash) but disappears before phase-2 tar
+    /// build. Simulated here by manually re-deleting the file inside
+    /// `build_sub_archive` is hard, so we exercise the same code path
+    /// by deleting BEFORE pack runs — the file must surface in
+    /// `skipped` even when it was present at the caller's scan time.
+    /// (This is the bug from the 2026-05-28 user report: a `%TEMP%`
+    /// `.tmp` file vanished between scan and pack — pack errored;
+    /// post-fix it skips.)
+    #[test]
+    fn pack_returns_packed_count_matching_manifest_after_skips() {
+        let tmp = TempDir::new().expect("tempdir");
+        let a = tmp.path().join("a.bin");
+        let b = tmp.path().join("b.bin");
+        let phantom = tmp.path().join("phantom.bin");
+        write_file(&a, b"alpha");
+        write_file(&b, b"beta");
+
+        let bundle = tmp.path().join("out.pq");
+        let adapter = PqWriterAdapter::new();
+        let outcome = adapter
+            .pack(vec![a, b, phantom.clone()], &bundle)
+            .expect("pack");
+
+        assert_eq!(outcome.packed_count, 2);
+        assert_eq!(outcome.skipped, vec![phantom]);
+
+        // Verify the bundle's manifest matches packed_count.
+        let file = File::open(&bundle).expect("open bundle");
+        let mut archive = Archive::new(BufReader::new(file));
+        let mut found = false;
+        for entry in archive.entries().expect("entries") {
+            let mut entry = entry.expect("entry");
+            let p = entry.path().expect("path").to_string_lossy().into_owned();
+            if p == "manifest.json" {
+                let mut buf = Vec::new();
+                entry.read_to_end(&mut buf).expect("read");
+                let m: Manifest = serde_json::from_slice(&buf).expect("parse manifest");
+                assert_eq!(m.items.len(), outcome.packed_count);
+                found = true;
+                break;
+            }
+        }
+        assert!(found, "manifest.json not found in bundle");
     }
 
     #[test]

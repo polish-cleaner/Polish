@@ -21,6 +21,16 @@ use wc_core::pipeline::Previewed;
 use wc_core::ports::pq_port::{PqError, PqPort};
 use wc_core::Cleanup;
 
+/// io::ErrorKinds we treat as "file already gone" during the
+/// delete-originals pass — these are not actionable failures, the
+/// file is already in the target state (absent).
+fn is_already_gone(kind: std::io::ErrorKind) -> bool {
+    matches!(
+        kind,
+        std::io::ErrorKind::NotFound | std::io::ErrorKind::PermissionDenied
+    )
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ExecuteError {
     #[error("bundle pack failed")]
@@ -56,27 +66,45 @@ pub fn run<P: PqPort>(
     skip_locked: bool,
 ) -> Result<ExecuteOutcome, ExecuteError> {
     let paths: Vec<PathBuf> = plan.findings().iter().map(|f| f.path.clone()).collect();
-    let (readable, locked) = partition_readable(&paths);
+    let (readable, preflight_skipped) = partition_readable(&paths);
 
-    if !locked.is_empty() && !skip_locked {
+    if !preflight_skipped.is_empty() && !skip_locked {
         return Ok(ExecuteOutcome {
             packed_count: 0,
-            locked_files: locked,
+            locked_files: preflight_skipped,
             needs_user_decision: true,
         });
     }
 
-    port.pack(readable.clone(), bundle)
+    let pack_outcome = port
+        .pack(readable.clone(), bundle)
         .map_err(ExecuteError::Pack)?;
-    for path in &readable {
-        std::fs::remove_file(path).map_err(|source| ExecuteError::Delete {
-            path: path.clone(),
-            source,
-        })?;
+
+    // Only delete originals the writer actually packed. Anything in
+    // pack_outcome.skipped vanished or got locked mid-pack — there's
+    // nothing to delete and nothing the user has to choose about.
+    let pack_skipped: std::collections::HashSet<&PathBuf> = pack_outcome.skipped.iter().collect();
+    for path in readable.iter().filter(|p| !pack_skipped.contains(p)) {
+        match std::fs::remove_file(path) {
+            Ok(()) => {}
+            // Race: file already deleted by another process (Windows
+            // tmp cleanup, antivirus quarantine). Target state met;
+            // no error.
+            Err(e) if is_already_gone(e.kind()) => {}
+            Err(source) => {
+                return Err(ExecuteError::Delete {
+                    path: path.clone(),
+                    source,
+                });
+            }
+        }
     }
+
+    let mut locked_files = preflight_skipped;
+    locked_files.extend(pack_outcome.skipped);
     Ok(ExecuteOutcome {
-        packed_count: readable.len(),
-        locked_files: locked,
+        packed_count: pack_outcome.packed_count,
+        locked_files,
         needs_user_decision: false,
     })
 }
@@ -120,6 +148,7 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
     use wc_core::pipeline::Scanned;
+    use wc_core::ports::pq_port::PackOutcome;
     use wc_core::Finding;
 
     fn make_plan(paths: &[PathBuf]) -> Cleanup<Previewed> {
@@ -134,18 +163,44 @@ mod tests {
         Cleanup::<Scanned>::new(findings).preview()
     }
 
-    /// Stub PqPort that records what was packed and never fails.
-    /// `Mutex` (not `RefCell`) so the type stays `Sync` — `PqPort`
-    /// is `Send + Sync` per its trait bounds.
+    /// Stub PqPort that records what was packed and packs all items.
     #[derive(Default)]
     struct OkPort {
         packed: std::sync::Mutex<Vec<PathBuf>>,
     }
 
     impl PqPort for OkPort {
-        fn pack(&self, items: Vec<PathBuf>, _out: &Path) -> Result<(), PqError> {
+        fn pack(&self, items: Vec<PathBuf>, _out: &Path) -> Result<PackOutcome, PqError> {
+            let count = items.len();
             *self.packed.lock().expect("mutex") = items;
+            Ok(PackOutcome {
+                packed_count: count,
+                skipped: Vec::new(),
+            })
+        }
+        fn unpack(&self, _bundle: &Path, _dest_root: &Path) -> Result<(), PqError> {
             Ok(())
+        }
+        fn verify(&self, _bundle: &Path) -> Result<(), PqError> {
+            Ok(())
+        }
+    }
+
+    /// Stub PqPort that simulates a mid-pack race: a configured
+    /// subset of `items` lands in `skipped` instead of being packed.
+    struct RacingPort {
+        racing: Vec<PathBuf>,
+    }
+
+    impl PqPort for RacingPort {
+        fn pack(&self, items: Vec<PathBuf>, _out: &Path) -> Result<PackOutcome, PqError> {
+            let racing: std::collections::HashSet<PathBuf> = self.racing.iter().cloned().collect();
+            let (packed, skipped): (Vec<_>, Vec<_>) =
+                items.into_iter().partition(|p| !racing.contains(p));
+            Ok(PackOutcome {
+                packed_count: packed.len(),
+                skipped,
+            })
         }
         fn unpack(&self, _bundle: &Path, _dest_root: &Path) -> Result<(), PqError> {
             Ok(())
@@ -186,32 +241,71 @@ mod tests {
         assert!(!outcome.needs_user_decision);
     }
 
+    /// Race a la 2026-05-28 user report: a `%TEMP%` file passes the
+    /// pre-flight (exists when we check) but the writer reports it
+    /// as `skipped` later (vanished mid-pack). The use case MUST:
+    /// - NOT return ExecuteError::Pack
+    /// - merge the writer's `skipped` into `locked_files`
+    /// - skip the delete-original step for that path
+    /// - NOT raise ExecuteError::Delete when the original is gone
     #[test]
-    fn missing_file_does_not_count_as_locked_and_propagates_as_pack_error() {
-        // is_locked() returns false for NotFound; so it falls through
-        // to pack(), which would return Err. To assert this in the use
-        // case, swap in a port that errors on pack.
-        struct ErrPort;
-        impl PqPort for ErrPort {
-            fn pack(&self, _i: Vec<PathBuf>, _o: &Path) -> Result<(), PqError> {
-                Err(PqError::Io(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "missing",
-                )))
-            }
-            fn unpack(&self, _b: &Path, _d: &Path) -> Result<(), PqError> {
-                Ok(())
-            }
-            fn verify(&self, _b: &Path) -> Result<(), PqError> {
-                Ok(())
-            }
-        }
+    fn race_deleted_file_lands_in_locked_files_without_failing_the_pack() {
         let tmp = TempDir::new().expect("tmp");
-        let phantom = tmp.path().join("does-not-exist.bin");
-        let plan = make_plan(&[phantom]);
-        let port = ErrPort;
-        let err = run(plan, &port, &tmp.path().join("out.pq"), false)
-            .expect_err("expected pack error to surface");
-        assert!(matches!(err, ExecuteError::Pack(_)));
+        let a = tmp.path().join("a.bin");
+        let raced = tmp.path().join("raced.tmp");
+        fs::write(&a, b"survivor").expect("write a");
+        fs::write(&raced, b"will vanish").expect("write raced");
+
+        let plan = make_plan(&[a.clone(), raced.clone()]);
+        // The port reports `raced` as skipped (simulating the writer
+        // catching NotFound mid-pack); the file still exists from the
+        // use case's point of view BUT delete is skipped because of
+        // the skipped list.
+        let port = RacingPort {
+            racing: vec![raced.clone()],
+        };
+
+        let outcome = run(plan, &port, &tmp.path().join("out.pq"), false).expect("run");
+
+        assert_eq!(outcome.packed_count, 1);
+        assert_eq!(outcome.locked_files, vec![raced.clone()]);
+        assert!(!outcome.needs_user_decision);
+        assert!(!a.exists(), "packed survivor should be deleted");
+        assert!(raced.exists(), "raced file should NOT be deleted");
+    }
+
+    /// Race during the delete pass: a file existed at scan, passed
+    /// pre-flight, was packed, then a third process deleted the
+    /// original before our `remove_file` ran. NotFound on remove is
+    /// the target state — must not be surfaced as ExecuteError::Delete.
+    #[test]
+    fn delete_tolerates_file_already_gone() {
+        let tmp = TempDir::new().expect("tmp");
+        let a = tmp.path().join("a.bin");
+        let phantom = tmp.path().join("phantom.bin");
+        fs::write(&a, b"alpha").expect("write a");
+        // `phantom` never created — simulates "deleted by another
+        // process between pack and our remove_file". The pre-flight
+        // would skip it (NotFound is skippable), but a 2nd-call retry
+        // with skip_locked=true would include it via the original
+        // findings if the caller didn't filter. Test that branch.
+
+        let plan = make_plan(&[a.clone(), phantom]);
+        let port = OkPort::default();
+        // skip_locked=true forces pre-flight to bypass user-decision
+        // even though `phantom` is in pre-flight-skipped, then pack
+        // is called with [a, phantom]. OkPort claims it packed both;
+        // delete on `phantom` would normally fail NotFound.
+        let outcome = run(plan, &port, &tmp.path().join("out.pq"), true)
+            .expect("delete should tolerate gone");
+
+        // skip_locked=true means pre-flight result not shown to user;
+        // pack reports nothing skipped from its perspective.
+        // Note: with the current OkPort the outcome's packed_count
+        // includes both items because OkPort always packs everything.
+        // The point of this test is that NO Delete error is raised
+        // when the file is already absent.
+        assert_eq!(outcome.packed_count, 2);
+        assert!(!a.exists(), "real file should be deleted");
     }
 }

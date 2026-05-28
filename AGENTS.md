@@ -139,6 +139,7 @@ These were resolved in the design grill (Q1–Q15) + 2026-05-28 adversarial deba
 - **Cleanup categories.** Any new category must declare safety tier (Light/Balanced/Aggressive/Pro), per-item confirm policy, and OEM/dev-environment risk note. Per PLAN §8.
 - **DRY (full codebase, Rust + TS).** Do not duplicate logic across files. If the same expression appears in 3+ places, extract it into a shared helper module (Rust: a `*_util.rs` or new module; TS: `crates/wc-ui/src/lib/<purpose>.ts`). Before writing a new helper, grep for an existing one — prefer extending it over creating a parallel one.
 - **Frontend rules (`crates/wc-ui/`).** Read `crates/wc-ui/AGENTS.md` before editing any file under `crates/wc-ui/src/`. Covers required file structure, test-per-file rule, types-only-in-`src/types/` rule. Frontend rules override default React conventions.
+- **Race-condition / "real-world failure mode" coverage is mandatory.** Any time a user-reported bug exercises a real-machine condition the unit tests didn't cover (`%TEMP%` file deleted mid-pack, Chrome locking cache files, antivirus interfering), add a Rust integration-style test that simulates the scenario via a stub port or a real `tempfile::TempDir` BEFORE the fix is allowed to ship. The user should not need to relaunch the UI to confirm a regression is closed. Place these tests in the closest use case (`crates/wc-app/src/usecase/<name>.rs`) so they run via `cargo test --workspace`.
 
 ## What NOT to do
 
