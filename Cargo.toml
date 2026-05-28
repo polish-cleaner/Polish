@@ -8,13 +8,13 @@ members = [
     "crates/wc-test-fixtures",
     "crates/wc-svc",
     "crates/wc-cli",
-    # "crates/wc-ui/src-tauri",  # uncomment after `npx @tauri-apps/cli@latest init` inside crates/wc-ui
+    "crates/wc-ui/src-tauri",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.90"
 license = "MIT"
 authors = ["Polish contributors"]
 repository = "https://github.com/TBD/polish"
