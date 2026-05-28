@@ -4,15 +4,17 @@
 //! signing) lands after the Tauri+service IPC critical spike
 //! (PROJECT.md §11 Week 1–3).
 
-#![forbid(unsafe_code)]
+// `deny` (not `forbid`) so the single MoveFileExW call in pq_writer::atomic
+// can opt in via `#[allow(unsafe_code)]` on that one function only.
+#![deny(unsafe_code)]
 
 pub mod categories;
 pub mod env;
+pub mod pq_writer;
 pub mod scan_util;
 // pub mod fs;
 // pub mod registry;
 // pub mod wsl;
-// pub mod pq_writer;
 // pub mod notification;
 // pub mod signing;
 

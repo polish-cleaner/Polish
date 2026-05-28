@@ -35,4 +35,9 @@ impl<S: State> Cleanup<S> {
     pub fn is_empty(&self) -> bool {
         self.findings.is_empty()
     }
+
+    /// Borrow the findings list (read-only).
+    pub fn findings(&self) -> &[Finding] {
+        &self.findings
+    }
 }

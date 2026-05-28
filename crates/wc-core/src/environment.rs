@@ -6,6 +6,9 @@ pub struct Environment {
     pub has_pnpm: bool,
     pub has_cargo: bool,
     pub has_wsl: bool,
+    pub has_chrome: bool,
+    pub has_edge: bool,
+    pub has_firefox: bool,
     pub windows_build: Option<u32>,
 }
 
@@ -21,5 +24,14 @@ impl Environment {
     }
     pub fn has_wsl(&self) -> bool {
         self.has_wsl
+    }
+    pub fn has_chrome(&self) -> bool {
+        self.has_chrome
+    }
+    pub fn has_edge(&self) -> bool {
+        self.has_edge
+    }
+    pub fn has_firefox(&self) -> bool {
+        self.has_firefox
     }
 }

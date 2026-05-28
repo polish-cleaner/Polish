@@ -15,6 +15,7 @@ wc-core = { path = "../wc-core" }
 wc-app = { path = "../wc-app" }
 wc-adapters = { path = "../wc-adapters" }
 anyhow = { workspace = true }
+clap = { version = "4.5", features = ["derive"] }
 
 [lints.clippy]
 unwrap_used = "deny"
