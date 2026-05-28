@@ -67,17 +67,14 @@ impl ExecuteResult {
 /// 24k+ findings, antivirus-amplified) does NOT block Tauri's main
 /// thread. Without this the UI freezes for the full pack duration.
 #[tauri::command]
-async fn execute(
-    findings: Vec<Finding>,
-    skip_locked: bool,
-) -> Result<ExecuteResult, String> {
+async fn execute(findings: Vec<Finding>, skip_locked: bool) -> Result<ExecuteResult, String> {
     tokio::task::spawn_blocking(move || -> Result<ExecuteResult, String> {
         wc_adapters::ensure_linked();
         let bundle = default_bundle_path()?;
         let plan = preview_cleanup::run(findings);
         let port = PqWriterAdapter::new();
-        let outcome = execute_cleanup::run(plan, &port, &bundle, skip_locked)
-            .map_err(|e| error_chain(&e))?;
+        let outcome =
+            execute_cleanup::run(plan, &port, &bundle, skip_locked).map_err(|e| error_chain(&e))?;
         let bundle_ref = if outcome.needs_user_decision {
             None
         } else {
