@@ -22,7 +22,7 @@ use time::OffsetDateTime;
 pub fn write_start(path: &Path, bundle_id: &str, source_count: usize) -> io::Result<()> {
     let now = OffsetDateTime::now_utc()
         .format(&Iso8601::DEFAULT)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(io::Error::other)?;
     let mut f = File::create(path)?;
     writeln!(f, "bundle_id={bundle_id}")?;
     writeln!(f, "started_at={now}")?;

@@ -122,4 +122,30 @@ describe("App", () => {
       expect(screen.getByText(/scan blew up/)).toBeInTheDocument();
     });
   });
+
+  it("surfaces backend execute error including the chained source (path + reason)", async () => {
+    const chainedErr =
+      "bundle pack failed: C:\\Users\\v\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\Cache_Data\\f_000123: The process cannot access the file because it is being used by another process. (os error 32)";
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "detect_env") return Promise.resolve(envFixture);
+      if (cmd === "scan") return Promise.resolve(findingsFixture);
+      if (cmd === "execute") return Promise.reject(chainedErr);
+      return Promise.reject(new Error(`unknown command: ${cmd}`));
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Quarantine all/ }));
+    const dialog = screen.getByRole("dialog");
+    const confirmBtn = within(dialog).getByRole("button", { name: "Quarantine" });
+    await user.click(confirmBtn);
+    expect(
+      await screen.findByText(/bundle pack failed/, {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/f_000123/)).toBeInTheDocument();
+    expect(screen.getByText(/being used by another process/)).toBeInTheDocument();
+  });
 });

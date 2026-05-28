@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  wc_ui_tauri_lib::run();
+    wc_ui_tauri_lib::run();
 }

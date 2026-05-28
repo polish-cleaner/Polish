@@ -83,14 +83,14 @@ impl PqPort for PqWriterAdapter {
         let mut by_cat: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
 
         for src in &items {
-            let meta = fs::metadata(src)?;
+            let meta = fs::metadata(src).map_err(|e| io_with_path(src, e))?;
             if !meta.is_file() {
                 return Err(PqError::Io(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("not a regular file: {}", src.display()),
                 )));
             }
-            let digest = hash::blake3_file(src)?;
+            let digest = hash::blake3_file(src).map_err(|e| io_with_path(src, e))?;
             manifest_items.push(ManifestItem {
                 original_path: src.to_string_lossy().into_owned(),
                 size: meta.len(),
@@ -137,7 +137,7 @@ impl PqPort for PqWriterAdapter {
             }
             let tmp_file = writer
                 .into_inner()
-                .map_err(|e| PqError::Io(io::Error::new(io::ErrorKind::Other, e.to_string())))?;
+                .map_err(|e| PqError::Io(io::Error::other(e.to_string())))?;
             tmp_file.sync_all()?;
         }
 
@@ -227,20 +227,30 @@ fn build_sub_archive(paths: &[PathBuf]) -> Result<Vec<u8>, PqError> {
         tarb.mode(tar::HeaderMode::Deterministic);
         for p in paths {
             let entry = archive_entry_path(p);
-            let mut f = File::open(p)?;
-            let meta = f.metadata()?;
+            let mut f = File::open(p).map_err(|e| io_with_path(p, e))?;
+            let meta = f.metadata().map_err(|e| io_with_path(p, e))?;
             let mut header = Header::new_gnu();
             header.set_size(meta.len());
             header.set_mode(0o644);
             header.set_mtime(0);
             header.set_entry_type(tar::EntryType::Regular);
             header.set_cksum();
-            tarb.append_data(&mut header, &entry, &mut f)?;
+            tarb.append_data(&mut header, &entry, &mut f)
+                .map_err(|e| io_with_path(p, e))?;
         }
         tarb.finish()?;
     }
     let out = zenc.finish().map_err(PqError::Io)?;
     Ok(out)
+}
+
+/// Prepend the failing file path to an io::Error so the UI can show
+/// users *which* file caused the pack to fail (locked, missing, ACL).
+fn io_with_path(path: &Path, e: io::Error) -> PqError {
+    PqError::Io(io::Error::new(
+        e.kind(),
+        format!("{}: {}", path.display(), e),
+    ))
 }
 
 fn append_bytes<W: Write>(
@@ -433,6 +443,31 @@ mod tests {
             let got = fs::read(&restored).expect("read restored");
             assert_eq!(want, got, "mismatch for {}", original.display());
         }
+    }
+
+    /// When pack hits a missing source file, the io::Error MUST carry
+    /// the offending path so the UI can show users which file failed
+    /// (e.g. a locked Chrome cache file or a path that vanished between
+    /// scan and pack).
+    #[test]
+    fn pack_error_includes_failing_source_path() {
+        let tmp = TempDir::new().expect("tempdir");
+        let real = tmp.path().join("real.bin");
+        write_file(&real, b"x");
+        let phantom = tmp.path().join("does/not/exist.bin");
+
+        let bundle = tmp.path().join("out.pq");
+        let adapter = PqWriterAdapter::new();
+        let err = adapter
+            .pack(vec![real, phantom.clone()], &bundle)
+            .expect_err("pack must fail on missing source");
+
+        let msg = err.to_string();
+        let phantom_str = phantom.display().to_string();
+        assert!(
+            msg.contains(&phantom_str),
+            "error must name the failing path, got: {msg}",
+        );
     }
 
     #[test]
