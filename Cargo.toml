@@ -17,7 +17,7 @@ edition = "2021"
 rust-version = "1.90"
 license = "MIT"
 authors = ["Polish contributors"]
-repository = "https://github.com/TBD/polish"
+repository = "https://github.com/polish-cleaner/Polish"
 
 [workspace.dependencies]
 thiserror = "1"
