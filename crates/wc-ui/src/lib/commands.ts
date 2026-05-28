@@ -9,3 +9,15 @@ export function scan(): Promise<Finding[]> {
 export function detectEnv(): Promise<Environment> {
   return invoke<Environment>("detect_env");
 }
+
+export function execute(findings: Finding[]): Promise<string> {
+  return invoke<string>("execute", { findings });
+}
+
+export function restore(bundle: string, destRoot: string): Promise<void> {
+  return invoke<void>("restore", { bundle, destRoot });
+}
+
+export function verify(bundle: string): Promise<void> {
+  return invoke<void>("verify", { bundle });
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 
@@ -32,6 +32,7 @@ beforeEach(() => {
   invokeMock.mockImplementation((cmd: string) => {
     if (cmd === "detect_env") return Promise.resolve(envFixture);
     if (cmd === "scan") return Promise.resolve(findingsFixture);
+    if (cmd === "execute") return Promise.resolve("C:\\Temp\\polish-cleanup-42.pq");
     return Promise.reject(new Error(`unknown command: ${cmd}`));
   });
 });
@@ -54,7 +55,7 @@ describe("App", () => {
   it("scan button is enabled before scanning, shows table after click", async () => {
     const user = userEvent.setup();
     render(<App />);
-    const button = screen.getByRole("button", { name: /Scan/i });
+    const button = screen.getByRole("button", { name: /^Scan$/ });
     expect(button).not.toBeDisabled();
     await user.click(button);
     await waitFor(() => {
@@ -64,6 +65,51 @@ describe("App", () => {
     expect(screen.getByText(/Findings:/)).toBeInTheDocument();
   });
 
+  it("Quarantine button only appears after scan returns findings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    expect(screen.queryByRole("button", { name: /Quarantine all/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+  });
+
+  it("clicking Quarantine opens confirmation modal; Cancel dismisses without invoking execute", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Quarantine all/ }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/move/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(invokeMock).not.toHaveBeenCalledWith("execute", expect.anything());
+  });
+
+  it("confirming the modal invokes execute and shows the bundle path", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Quarantine all/ }));
+    const dialog = screen.getByRole("dialog");
+    const confirmBtn = within(dialog).getByRole("button", { name: "Quarantine" });
+    await user.click(confirmBtn);
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith("execute", { findings: findingsFixture });
+    });
+    expect(
+      await screen.findByText(/Quarantined to/, {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/polish-cleanup-42/).length).toBeGreaterThan(0);
+  });
+
   it("surfaces an error if scan rejects", async () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "detect_env") return Promise.resolve(envFixture);
@@ -71,7 +117,7 @@ describe("App", () => {
     });
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: /Scan/i }));
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
     await waitFor(() => {
       expect(screen.getByText(/scan blew up/)).toBeInTheDocument();
     });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { scan, detectEnv } from "../../lib/commands";
+import { scan, detectEnv, execute, restore, verify } from "../../lib/commands";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -46,5 +46,43 @@ describe("detectEnv", () => {
     expect(invokeMock).toHaveBeenCalledExactlyOnceWith("detect_env");
     expect(env.has_npm).toBe(true);
     expect(env.has_pnpm).toBe(false);
+  });
+});
+
+describe("execute", () => {
+  it("calls invoke('execute', { findings }) and returns bundle path", async () => {
+    invokeMock.mockResolvedValue("C:\\Temp\\polish-cleanup-123.pq");
+    const findings = [
+      { path: "a", size: 100, category_id: "dev.npm.cache" },
+    ];
+    const path = await execute(findings);
+    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("execute", { findings });
+    expect(path).toBe("C:\\Temp\\polish-cleanup-123.pq");
+  });
+
+  it("propagates errors as rejected promises", async () => {
+    invokeMock.mockRejectedValue(new Error("disk full"));
+    await expect(execute([])).rejects.toThrow("disk full");
+  });
+});
+
+describe("restore", () => {
+  it("calls invoke('restore', { bundle, destRoot })", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    await restore("C:\\bundle.pq", "C:\\restored");
+    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("restore", {
+      bundle: "C:\\bundle.pq",
+      destRoot: "C:\\restored",
+    });
+  });
+});
+
+describe("verify", () => {
+  it("calls invoke('verify', { bundle })", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    await verify("C:\\bundle.pq");
+    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("verify", {
+      bundle: "C:\\bundle.pq",
+    });
   });
 });

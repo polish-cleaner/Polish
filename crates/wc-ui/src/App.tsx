@@ -1,12 +1,18 @@
+import { useState } from "react";
+import ConfirmModal from "./components/ConfirmModal";
 import { formatMiB, groupByCategory, totalBytes } from "./lib/format";
 import { useEnvironment } from "./hooks/useEnvironment";
 import { useScan } from "./hooks/useScan";
+import { useExecute } from "./hooks/useExecute";
 
 export default function App() {
   const { env, error: envError } = useEnvironment();
   const { findings, scanning, error: scanError, runScan } = useScan();
-  const error = envError ?? scanError;
+  const { executing, bundlePath, error: executeError, runExecute } = useExecute();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const error = envError ?? scanError ?? executeError;
   const groups = findings ? groupByCategory(findings) : [];
+  const total = findings ? totalBytes(findings) : 0;
 
   return (
     <main className="app">
@@ -34,15 +40,32 @@ export default function App() {
 
       <section>
         <h2>Scan</h2>
-        <button onClick={runScan} disabled={scanning}>
-          {scanning ? "Scanning…" : "Scan"}
-        </button>
+        <div className="actions">
+          <button onClick={runScan} disabled={scanning || executing}>
+            {scanning ? "Scanning…" : "Scan"}
+          </button>
+          {findings && findings.length > 0 && (
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={executing}
+              className="destructive"
+            >
+              {executing ? "Quarantining…" : "Quarantine all"}
+            </button>
+          )}
+        </div>
         {error && <p className="error">Error: {error}</p>}
+        {bundlePath && (
+          <p className="status success">
+            Quarantined to <code>{bundlePath}</code>. Restore via{" "}
+            <code>polish restore --bundle "{bundlePath}" --dest &lt;dir&gt;</code>.
+          </p>
+        )}
         {findings && (
           <>
             <p className="status">
               Findings: <strong>{findings.length.toLocaleString()}</strong> files,{" "}
-              <strong>{formatMiB(totalBytes(findings))}</strong>
+              <strong>{formatMiB(total)}</strong>
             </p>
             <table className="categories">
               <thead>
@@ -65,6 +88,25 @@ export default function App() {
           </>
         )}
       </section>
+
+      <ConfirmModal
+        open={confirmOpen}
+        destructive
+        title="Quarantine all findings?"
+        message={
+          <>
+            This will move <strong>{findings?.length.toLocaleString() ?? 0}</strong>{" "}
+            files ({formatMiB(total)}) into a <code>.pq</code> bundle and delete the
+            originals from disk. The bundle is verifiable and restorable.
+          </>
+        }
+        confirmLabel="Quarantine"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          if (findings) runExecute(findings);
+        }}
+      />
     </main>
   );
 }

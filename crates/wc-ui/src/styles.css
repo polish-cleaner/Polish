@@ -88,6 +88,28 @@ button:hover:not(:disabled) {
   background: rgba(127, 127, 127, 0.1);
 }
 
+button.destructive {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+button.destructive:hover:not(:disabled) {
+  background: rgba(192, 57, 43, 0.1);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.status.success {
+  color: #27ae60;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .categories {
   width: 100%;
   border-collapse: collapse;
