@@ -137,6 +137,8 @@ These were resolved in the design grill (Q1–Q15) + 2026-05-28 adversarial deba
 - **Risk matrix format.** Single row per risk. Columns: Risk | Type | Probability | Impact | Mitigation. Severity tags in **bold**. Mark NEW additions with `(NEW)` or `(NEW post-debate)` / `(NEW post-research <date>)`.
 - **Citations.** Inline `[claim](url)`. Cite canonical sources over marketing copy (e.g., trust Microsoft Learn over CA vendor blogs on SmartScreen behavior).
 - **Cleanup categories.** Any new category must declare safety tier (Light/Balanced/Aggressive/Pro), per-item confirm policy, and OEM/dev-environment risk note. Per PLAN §8.
+- **DRY (full codebase, Rust + TS).** Do not duplicate logic across files. If the same expression appears in 3+ places, extract it into a shared helper module (Rust: a `*_util.rs` or new module; TS: `crates/wc-ui/src/lib/<purpose>.ts`). Before writing a new helper, grep for an existing one — prefer extending it over creating a parallel one.
+- **Frontend rules (`crates/wc-ui/`).** Read `crates/wc-ui/AGENTS.md` before editing any file under `crates/wc-ui/src/`. Covers required file structure, test-per-file rule, types-only-in-`src/types/` rule. Frontend rules override default React conventions.
 
 ## What NOT to do
 
