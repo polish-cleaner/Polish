@@ -1,34 +1,11 @@
-import { useEffect, useState } from "react";
-import type { Finding } from "./types/finding";
-import type { Environment } from "./types/environment";
 import { formatMiB, groupByCategory, totalBytes } from "./lib/format";
-import { scan, detectEnv } from "./lib/commands";
+import { useEnvironment } from "./hooks/useEnvironment";
+import { useScan } from "./hooks/useScan";
 
 export default function App() {
-  const [env, setEnv] = useState<Environment | null>(null);
-  const [findings, setFindings] = useState<Finding[] | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    detectEnv()
-      .then(setEnv)
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  async function runScan() {
-    setScanning(true);
-    setError(null);
-    try {
-      const result = await scan();
-      setFindings(result);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setScanning(false);
-    }
-  }
-
+  const { env, error: envError } = useEnvironment();
+  const { findings, scanning, error: scanError, runScan } = useScan();
+  const error = envError ?? scanError;
   const groups = findings ? groupByCategory(findings) : [];
 
   return (
