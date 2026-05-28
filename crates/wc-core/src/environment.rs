@@ -1,6 +1,8 @@
 //! Detected environment facts. Used by [`crate::Category::supports`].
 
-#[derive(Debug, Default, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Environment {
     pub has_npm: bool,
     pub has_pnpm: bool,

@@ -21,3 +21,6 @@ serde = { workspace = true }
 log = "0.4"
 tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
+wc-core = { path = "../../wc-core" }
+wc-app = { path = "../../wc-app" }
+wc-adapters = { path = "../../wc-adapters" }

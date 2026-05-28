@@ -4609,6 +4609,9 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
+ "wc-adapters",
+ "wc-app",
+ "wc-core",
 ]
 
 [[package]]

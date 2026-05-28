@@ -33,9 +33,89 @@ body {
   opacity: 0.7;
 }
 
+section {
+  margin-top: 32px;
+}
+
+section h2 {
+  font-size: 18px;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
+
 .status {
-  margin: 8px 0;
+  margin: 12px 0;
   line-height: 1.5;
+}
+
+.error {
+  margin: 12px 0;
+  color: #c0392b;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.env-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 20px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+button:hover:not(:disabled) {
+  background: rgba(127, 127, 127, 0.1);
+}
+
+.categories {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.categories th,
+.categories td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+
+.categories th {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.categories td:nth-child(2),
+.categories td:nth-child(3),
+.categories th:nth-child(2),
+.categories th:nth-child(3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 code {
@@ -43,4 +123,5 @@ code {
   background: rgba(127, 127, 127, 0.15);
   padding: 1px 6px;
   border-radius: 4px;
+  font-size: 13px;
 }

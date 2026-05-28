@@ -8,6 +8,7 @@ node_modules/
 dist/
 build/
 .tauri/
+*.tsbuildinfo
 crates/wc-ui/src-tauri/target/
 crates/wc-ui/src-tauri/gen/
 
