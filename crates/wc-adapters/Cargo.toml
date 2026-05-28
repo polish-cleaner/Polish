@@ -1,0 +1,25 @@
+[package]
+name = "wc-adapters"
+description = "Polish — concrete adapters (fs/registry/wsl/notify/pq/signing/categories)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+thiserror = { workspace = true }
+inventory = { workspace = true }
+blake3 = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Registry",
+] }
+winreg = "0.52"
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

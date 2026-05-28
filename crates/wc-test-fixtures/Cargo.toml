@@ -1,0 +1,15 @@
+[package]
+name = "wc-test-fixtures"
+description = "Polish — shared mocks + sample data for cross-crate tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+mockall = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

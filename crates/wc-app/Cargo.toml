@@ -1,0 +1,18 @@
+[package]
+name = "wc-app"
+description = "Polish — application layer (use cases)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

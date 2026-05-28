@@ -1,0 +1,38 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Node / Vite / Tauri
+node_modules/
+dist/
+build/
+.tauri/
+crates/wc-ui/src-tauri/target/
+crates/wc-ui/src-tauri/gen/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Signing artifacts (NEVER commit)
+*.pfx
+*.p12
+*.snk
+secrets/
+
+# Generated graphify outputs are committed; tmp not
+graphify-out/tmp/

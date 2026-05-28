@@ -1,0 +1,46 @@
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light dark;
+  color: rgba(0, 0, 0, 0.87);
+  background-color: #fafafa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: rgba(255, 255, 255, 0.92);
+    background-color: #1a1a1a;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+.app header h1 {
+  font-size: 36px;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0 0 32px;
+  opacity: 0.7;
+}
+
+.status {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  background: rgba(127, 127, 127, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}

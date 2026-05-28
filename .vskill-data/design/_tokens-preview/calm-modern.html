@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polish — calm-modern (refined)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* brand */
+    --brand-900:#143B2D;
+    --brand-700:#1F4D3B;
+    --brand-500:#2D6A52;
+    --brand-50:#EAF1ED;
+
+    /* accent (use sparingly — emphasis only) */
+    --accent-700:#9C4A2C;
+    --accent-500:#B85C3A;
+    --accent-50:#F6E8DF;
+
+    /* surface */
+    --surface-base:#FBFAF7;
+    --surface-elevated:#FFFFFF;
+    --surface-raised:#F4F2EC;
+    --surface-sunken:#EEEAE0;
+
+    /* text */
+    --text-primary:#14110E;
+    --text-secondary:#5C544B;
+    --text-tertiary:#908578;
+    --text-on-brand:#FFFFFF;
+
+    /* border */
+    --border-subtle:#ECE7DD;
+    --border-default:#DDD5C6;
+    --border-strong:#B8AC97;
+
+    /* status */
+    --success:#2F6B45;
+    --success-bg:#E4EEE7;
+    --warning:#B27017;
+    --warning-bg:#F6EAD4;
+    --error:#9A2A2A;
+    --error-bg:#F2DCDC;
+
+    /* fonts */
+    --font-display:"Instrument Serif", "Charter", Georgia, serif;
+    --font-sans:"Geist", ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
+    --font-mono:"Geist Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+
+    /* sizing */
+    --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+    --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px;
+    --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:20px;
+
+    /* elevation */
+    --sh-xs:0 1px 0 rgba(20,17,14,.04);
+    --sh-sm:0 1px 2px rgba(20,17,14,.05), 0 1px 1px rgba(20,17,14,.03);
+    --sh-md:0 4px 12px rgba(20,17,14,.06), 0 1px 2px rgba(20,17,14,.04);
+    --sh-lg:0 16px 40px -8px rgba(20,17,14,.12), 0 4px 8px rgba(20,17,14,.05);
+
+    /* motion */
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--surface-base);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+    font-size:14px;
+    line-height:1.55;
+    font-feature-settings:"ss01","cv11";
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    letter-spacing:-.005em;
+  }
+
+  /* layout */
+  .frame{max-width:1040px;margin:0 auto;padding:var(--s-8) var(--s-6) var(--s-9)}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-7)}
+  .brand{display:flex;align-items:center;gap:var(--s-3)}
+  .logo{
+    width:32px;height:32px;border-radius:8px;
+    background:linear-gradient(135deg,var(--brand-700),var(--brand-900));
+    display:grid;place-items:center;color:#fff;
+    font-family:var(--font-display);font-style:italic;font-size:20px;
+    box-shadow:var(--sh-sm), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .brand-name{font-family:var(--font-display);font-size:22px;letter-spacing:-.01em}
+  .brand-name em{font-style:italic;color:var(--brand-700)}
+  .nav{display:flex;gap:var(--s-1);align-items:center}
+  .nav a{
+    color:var(--text-secondary);text-decoration:none;
+    padding:6px 12px;border-radius:var(--r-sm);font-size:13px;font-weight:500;
+    transition:color .15s var(--ease-out),background .15s var(--ease-out);
+  }
+  .nav a:hover{color:var(--text-primary);background:var(--surface-raised)}
+  .nav a.active{color:var(--text-primary);background:var(--surface-raised)}
+
+  /* hero */
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:4px 10px 4px 8px;border-radius:9999px;
+    background:var(--surface-elevated);border:1px solid var(--border-subtle);
+    box-shadow:var(--sh-xs);
+    font-size:12px;font-weight:500;color:var(--text-secondary);
+    font-family:var(--font-mono);
+  }
+  .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--success)}
+  h1{
+    font-family:var(--font-display);
+    font-size:64px;font-weight:400;line-height:1.02;letter-spacing:-.025em;
+    margin:var(--s-5) 0 var(--s-3);max-width:760px;
+  }
+  h1 em{font-style:italic;color:var(--brand-700);font-weight:400}
+  .lead{
+    color:var(--text-secondary);font-size:18px;line-height:1.5;
+    margin:0 0 var(--s-7);max-width:580px;letter-spacing:-.005em;
+  }
+
+  h2{
+    font-family:var(--font-display);font-size:13px;font-weight:400;
+    margin:0 0 var(--s-4);color:var(--text-tertiary);
+    text-transform:uppercase;letter-spacing:.14em;font-style:italic;
+  }
+
+  /* section grid */
+  section{margin-bottom:var(--s-8)}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-5)}
+  .panel{
+    background:var(--surface-elevated);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--r-lg);
+    padding:var(--s-6);
+    box-shadow:var(--sh-sm);
+  }
+  .panel-tight{padding:var(--s-5)}
+
+  /* buttons */
+  .row{display:flex;gap:var(--s-2);align-items:center;flex-wrap:wrap}
+  .btn{
+    font-family:var(--font-sans);font-size:13px;font-weight:500;
+    padding:8px 14px;border-radius:var(--r-sm);
+    border:1px solid transparent;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    letter-spacing:-.005em;
+    transition:transform .12s var(--ease-out), background .15s var(--ease-out), box-shadow .15s var(--ease-out);
+  }
+  .btn:active{transform:translateY(.5px)}
+  .btn-primary{
+    background:var(--brand-700);color:var(--text-on-brand);
+    box-shadow:var(--sh-sm), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .btn-primary:hover{background:var(--brand-900)}
+  .btn-secondary{
+    background:var(--surface-elevated);color:var(--text-primary);
+    border-color:var(--border-default);box-shadow:var(--sh-xs);
+  }
+  .btn-secondary:hover{background:var(--surface-raised);border-color:var(--border-strong)}
+  .btn-ghost{background:transparent;color:var(--text-secondary);padding:8px 10px}
+  .btn-ghost:hover{background:var(--surface-raised);color:var(--text-primary)}
+  .kbd{
+    font-family:var(--font-mono);font-size:11px;
+    background:var(--surface-base);border:1px solid var(--border-subtle);
+    border-radius:4px;padding:1px 5px;color:var(--text-tertiary);
+    box-shadow:0 1px 0 var(--border-subtle);
+  }
+
+  /* form */
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .label{
+    font-size:12px;font-weight:500;color:var(--text-secondary);
+    letter-spacing:-.005em;
+  }
+  .input,.select{
+    font-family:var(--font-sans);font-size:13px;color:var(--text-primary);
+    padding:9px 12px;border:1px solid var(--border-default);
+    border-radius:var(--r-sm);background:var(--surface-elevated);
+    width:100%;box-shadow:var(--sh-xs);
+    transition:border-color .15s var(--ease-out), box-shadow .15s var(--ease-out);
+  }
+  .input::placeholder{color:var(--text-tertiary)}
+  .input:focus,.select:focus{
+    outline:none;border-color:var(--brand-500);
+    box-shadow:0 0 0 3px var(--brand-50);
+  }
+  .input-with-icon{position:relative}
+  .input-with-icon .input{padding-left:34px}
+  .input-with-icon svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-tertiary)}
+  .hint{font-size:12px;color:var(--text-tertiary)}
+
+  /* toggle */
+  .toggle{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer}
+  .toggle input{position:absolute;opacity:0;pointer-events:none}
+  .toggle-track{
+    width:34px;height:20px;border-radius:9999px;background:var(--surface-sunken);
+    position:relative;transition:background .2s var(--ease-out);
+    border:1px solid var(--border-default);
+  }
+  .toggle-thumb{
+    position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;
+    background:#fff;box-shadow:var(--sh-sm);
+    transition:transform .2s var(--ease-out);
+  }
+  .toggle input:checked + .toggle-track{background:var(--brand-700);border-color:var(--brand-900)}
+  .toggle input:checked + .toggle-track .toggle-thumb{transform:translateX(14px)}
+
+  /* stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3)}
+  .stat{
+    padding:var(--s-5);border:1px solid var(--border-subtle);
+    border-radius:var(--r-md);background:var(--surface-elevated);
+    box-shadow:var(--sh-xs);
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .stat-label{
+    font-size:11px;color:var(--text-tertiary);
+    text-transform:uppercase;letter-spacing:.1em;font-weight:500;
+  }
+  .stat-val{
+    font-family:var(--font-display);font-size:32px;font-weight:400;
+    line-height:1;letter-spacing:-.02em;color:var(--text-primary);
+  }
+  .stat-val em{font-style:italic;color:var(--brand-700)}
+  .stat-meta{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+
+  /* chips & status */
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 10px;font-size:12px;font-weight:500;
+    border-radius:9999px;letter-spacing:-.005em;
+  }
+  .chip .dot{width:6px;height:6px;border-radius:50%}
+  .chip-success{background:var(--success-bg);color:var(--success)}
+  .chip-success .dot{background:var(--success)}
+  .chip-warn{background:var(--warning-bg);color:var(--warning)}
+  .chip-warn .dot{background:var(--warning)}
+  .chip-error{background:var(--error-bg);color:var(--error)}
+  .chip-error .dot{background:var(--error)}
+  .chip-neutral{background:var(--surface-raised);color:var(--text-secondary)}
+  .chip-neutral .dot{background:var(--text-tertiary)}
+
+  /* scan list (real-world preview) */
+  .list{display:flex;flex-direction:column;gap:2px}
+  .list-row{
+    display:grid;grid-template-columns:24px 1fr auto auto auto;gap:var(--s-4);
+    align-items:center;padding:12px 14px;border-radius:var(--r-md);
+    transition:background .12s var(--ease-out);
+  }
+  .list-row:hover{background:var(--surface-raised)}
+  .checkbox{
+    width:18px;height:18px;border:1.5px solid var(--border-default);
+    border-radius:5px;background:var(--surface-elevated);
+    display:grid;place-items:center;cursor:pointer;
+    transition:border-color .12s var(--ease-out), background .12s var(--ease-out);
+  }
+  .checkbox.checked{background:var(--brand-700);border-color:var(--brand-700)}
+  .checkbox.checked::after{content:"";width:8px;height:4px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .list-name{font-weight:500;font-size:13.5px;color:var(--text-primary)}
+  .list-path{font-family:var(--font-mono);font-size:11.5px;color:var(--text-tertiary);margin-top:2px;letter-spacing:-.005em}
+  .list-size{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text-primary);font-variant-numeric:tabular-nums}
+
+  /* palette */
+  .palette{display:grid;grid-template-columns:repeat(9,1fr);gap:var(--s-3)}
+  .sw{display:flex;flex-direction:column;gap:6px}
+  .sw-box{aspect-ratio:1;border-radius:var(--r-sm);border:1px solid var(--border-subtle);box-shadow:var(--sh-xs)}
+  .sw-name{font-family:var(--font-mono);font-size:10.5px;color:var(--text-secondary)}
+  .sw-hex{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)}
+
+  /* type spec */
+  .type-row{display:grid;grid-template-columns:80px 1fr auto;gap:var(--s-4);align-items:baseline;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+  .type-row:last-child{border-bottom:0}
+  .type-label{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em}
+  .type-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)}
+  .t-display-xl{font-family:var(--font-display);font-size:40px;line-height:1;letter-spacing:-.02em}
+  .t-display-l{font-family:var(--font-display);font-size:28px;line-height:1.1;letter-spacing:-.015em}
+  .t-body-l{font-size:16px;line-height:1.55}
+  .t-body{font-size:14px;line-height:1.55}
+  .t-body-s{font-size:13px;line-height:1.5;color:var(--text-secondary)}
+  .t-label{font-size:12px;color:var(--text-secondary)}
+  .t-mono{font-family:var(--font-mono);font-size:12.5px;color:var(--text-secondary)}
+
+  /* footer */
+  .foot{margin-top:var(--s-8);padding-top:var(--s-5);border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;font-size:12px;color:var(--text-tertiary)}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- top bar -->
+  <div class="header">
+    <div class="brand">
+      <div class="logo">P</div>
+      <div class="brand-name">Polish<em>.</em></div>
+    </div>
+    <nav class="nav">
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Scan</a>
+      <a href="#">Quarantine</a>
+      <a href="#">Format Prep</a>
+      <a href="#">Settings</a>
+    </nav>
+  </div>
+
+  <!-- hero -->
+  <span class="badge"><span class="dot"></span>Engine online · v1.0.0 · MIT</span>
+  <h1>A Windows cleaner you can <em>actually trust.</em></h1>
+  <p class="lead">Open-source, quarantine-safe, no bundled offers, no FUD. Built for developers who'd rather see the diff than read marketing copy.</p>
+
+  <div class="row" style="margin-bottom:var(--s-8)">
+    <button class="btn btn-primary">Run scan <span class="kbd" style="color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);box-shadow:none">⌘ R</span></button>
+    <button class="btn btn-secondary">Open quarantine</button>
+    <button class="btn btn-ghost">View manifest</button>
+  </div>
+
+  <!-- stats -->
+  <section>
+    <h2>Overview</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <span class="stat-label">Recoverable</span>
+        <span class="stat-val">42.7<em>GB</em></span>
+        <span class="stat-meta"><span class="chip chip-success"><span class="dot"></span>safe</span></span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">npm + pnpm + cargo</span>
+        <span class="stat-val">8.1<em>GB</em></span>
+        <span class="stat-meta">across 14 projects</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Quarantined</span>
+        <span class="stat-val">3</span>
+        <span class="stat-meta">bundles · 6.2 GB</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Last scan</span>
+        <span class="stat-val">2<em>h</em></span>
+        <span class="stat-meta">today, 14:08</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- scan results + controls -->
+  <section class="grid-2">
+    <div class="panel">
+      <h2>Scan results — npm cache</h2>
+      <div class="list">
+        <div class="list-row">
+          <div class="checkbox checked"></div>
+          <div>
+            <div class="list-name">node_modules · monorepo/web</div>
+            <div class="list-path">C:\Users\dev\code\app\packages\web\node_modules</div>
+          </div>
+          <div></div>
+          <span class="chip chip-success"><span class="dot"></span>safe</span>
+          <div class="list-size">3.4 GB</div>
+        </div>
+        <div class="list-row">
+          <div class="checkbox checked"></div>
+          <div>
+            <div class="list-name">.pnpm-store</div>
+            <div class="list-path">C:\Users\dev\AppData\Local\pnpm\store</div>
+          </div>
+          <div></div>
+          <span class="chip chip-success"><span class="dot"></span>safe</span>
+          <div class="list-size">2.1 GB</div>
+        </div>
+        <div class="list-row">
+          <div class="checkbox"></div>
+          <div>
+            <div class="list-name">cargo target — polish-engine</div>
+            <div class="list-path">C:\Users\dev\code\polish\target</div>
+          </div>
+          <div></div>
+          <span class="chip chip-warn"><span class="dot"></span>review</span>
+          <div class="list-size">1.8 GB</div>
+        </div>
+        <div class="list-row">
+          <div class="checkbox checked"></div>
+          <div>
+            <div class="list-name">npm cache</div>
+            <div class="list-path">C:\Users\dev\AppData\Roaming\npm-cache</div>
+          </div>
+          <div></div>
+          <span class="chip chip-success"><span class="dot"></span>safe</span>
+          <div class="list-size">812 MB</div>
+        </div>
+        <div class="list-row">
+          <div class="checkbox"></div>
+          <div>
+            <div class="list-name">node_modules · archived/legacy-api</div>
+            <div class="list-path">D:\archive\legacy-api\node_modules</div>
+          </div>
+          <div></div>
+          <span class="chip chip-neutral"><span class="dot"></span>excluded</span>
+          <div class="list-size">624 MB</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Run profile</h2>
+      <div class="form-group" style="margin-bottom:var(--s-4)">
+        <label class="label">Profile</label>
+        <select class="select">
+          <option>default.polishprofile</option>
+          <option>aggressive.polishprofile</option>
+          <option>review-only.polishprofile</option>
+        </select>
+        <span class="hint">Profiles are portable. Export to share with your team.</span>
+      </div>
+
+      <div class="form-group" style="margin-bottom:var(--s-4)">
+        <label class="label">Target path</label>
+        <div class="input-with-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v11H3z"/></svg>
+          <input class="input" placeholder="C:\Users\dev\code" />
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin:var(--s-5) 0">
+        <label class="toggle">
+          <input type="checkbox" checked />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span>
+            <span class="t-body">Quarantine before deletion</span>
+            <div class="t-body-s">Move to .pq bundle — always reversible</div>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" checked />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span>
+            <span class="t-body">Verify BLAKE3 on restore</span>
+            <div class="t-body-s">Integrity check when undoing a scan</div>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span>
+            <span class="t-body">Aggressive mode</span>
+            <div class="t-body-s">Includes OEM bloat — per-item confirmation</div>
+          </span>
+        </label>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-primary">Quarantine &amp; clean</button>
+        <button class="btn btn-ghost">Dry run</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- typography spec -->
+  <section>
+    <h2>Typography</h2>
+    <div class="panel panel-tight">
+      <div class="type-row">
+        <span class="type-label">Display XL</span>
+        <span class="t-display-xl">Polish, <em style="font-style:italic;color:var(--brand-700)">with care.</em></span>
+        <span class="type-meta">Instrument Serif · 40 / 1.0 / −2%</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Display L</span>
+        <span class="t-display-l">Quarantine before deletion</span>
+        <span class="type-meta">Instrument Serif · 28 / 1.1</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body L</span>
+        <span class="t-body-l">Open-source, quarantine-safe, no bundled offers.</span>
+        <span class="type-meta">Geist · 16 / 1.55</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body</span>
+        <span class="t-body">Default reading size for lists and panels.</span>
+        <span class="type-meta">Geist · 14 / 1.55</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body S</span>
+        <span class="t-body-s">Secondary information, hints, help text.</span>
+        <span class="type-meta">Geist · 13 / 1.5</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Label</span>
+        <span class="t-label">FORM LABEL · 12px</span>
+        <span class="type-meta">Geist 500 · 12 / −0.5%</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Mono</span>
+        <span class="t-mono">C:\Users\dev\code\polish\target</span>
+        <span class="type-meta">Geist Mono · 12.5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- palette -->
+  <section>
+    <h2>Palette</h2>
+    <div class="panel panel-tight">
+      <div class="palette">
+        <div class="sw"><div class="sw-box" style="background:#143B2D"></div><span class="sw-name">brand-900</span><span class="sw-hex">#143B2D</span></div>
+        <div class="sw"><div class="sw-box" style="background:#1F4D3B"></div><span class="sw-name">brand-700</span><span class="sw-hex">#1F4D3B</span></div>
+        <div class="sw"><div class="sw-box" style="background:#2D6A52"></div><span class="sw-name">brand-500</span><span class="sw-hex">#2D6A52</span></div>
+        <div class="sw"><div class="sw-box" style="background:#EAF1ED"></div><span class="sw-name">brand-50</span><span class="sw-hex">#EAF1ED</span></div>
+        <div class="sw"><div class="sw-box" style="background:#B85C3A"></div><span class="sw-name">accent-500</span><span class="sw-hex">#B85C3A</span></div>
+        <div class="sw"><div class="sw-box" style="background:#FBFAF7"></div><span class="sw-name">surface-base</span><span class="sw-hex">#FBFAF7</span></div>
+        <div class="sw"><div class="sw-box" style="background:#F4F2EC"></div><span class="sw-name">surface-raised</span><span class="sw-hex">#F4F2EC</span></div>
+        <div class="sw"><div class="sw-box" style="background:#14110E"></div><span class="sw-name">text-primary</span><span class="sw-hex">#14110E</span></div>
+        <div class="sw"><div class="sw-box" style="background:#5C544B"></div><span class="sw-name">text-secondary</span><span class="sw-hex">#5C544B</span></div>
+      </div>
+      <div class="palette" style="margin-top:var(--s-4)">
+        <div class="sw"><div class="sw-box" style="background:#908578"></div><span class="sw-name">text-tertiary</span><span class="sw-hex">#908578</span></div>
+        <div class="sw"><div class="sw-box" style="background:#DDD5C6"></div><span class="sw-name">border-default</span><span class="sw-hex">#DDD5C6</span></div>
+        <div class="sw"><div class="sw-box" style="background:#ECE7DD"></div><span class="sw-name">border-subtle</span><span class="sw-hex">#ECE7DD</span></div>
+        <div class="sw"><div class="sw-box" style="background:#2F6B45"></div><span class="sw-name">success</span><span class="sw-hex">#2F6B45</span></div>
+        <div class="sw"><div class="sw-box" style="background:#B27017"></div><span class="sw-name">warning</span><span class="sw-hex">#B27017</span></div>
+        <div class="sw"><div class="sw-box" style="background:#9A2A2A"></div><span class="sw-name">error</span><span class="sw-hex">#9A2A2A</span></div>
+        <div class="sw"><div class="sw-box" style="background:transparent;border:1px dashed var(--border-default)"></div><span class="sw-name">— reserved</span><span class="sw-hex"></span></div>
+        <div class="sw"><div class="sw-box" style="background:transparent;border:1px dashed var(--border-default)"></div><span class="sw-name">— reserved</span><span class="sw-hex"></span></div>
+        <div class="sw"><div class="sw-box" style="background:transparent;border:1px dashed var(--border-default)"></div><span class="sw-name">— reserved</span><span class="sw-hex"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- buttons & chips -->
+  <section class="grid-2">
+    <div class="panel">
+      <h2>Buttons</h2>
+      <div class="row" style="margin-bottom:var(--s-4)">
+        <button class="btn btn-primary">Run scan</button>
+        <button class="btn btn-secondary">Open quarantine</button>
+        <button class="btn btn-ghost">Cancel</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" style="background:var(--accent-500)">Destructive · with caution</button>
+        <button class="btn btn-secondary" disabled style="opacity:.5;cursor:not-allowed">Disabled</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Status</h2>
+      <div class="row" style="margin-bottom:var(--s-4)">
+        <span class="chip chip-success"><span class="dot"></span>safe to remove</span>
+        <span class="chip chip-warn"><span class="dot"></span>review</span>
+        <span class="chip chip-error"><span class="dot"></span>blocked</span>
+        <span class="chip chip-neutral"><span class="dot"></span>excluded</span>
+      </div>
+      <div class="row">
+        <span class="t-mono">polish scan --dry-run --profile=default</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>Polish · trust-first Windows maintenance</span>
+    <span class="t-mono">tokens / calm-modern · v1</span>
+  </div>
+
+</div>
+</body>
+</html>

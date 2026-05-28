@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "1.0.0",
+  "query": "Best-in-class Rust code architecture for Polish — robust, modular, adapter-based, strongly-typed, contributor-friendly",
+  "refinedQuery": "Recommend complete Rust workspace architecture for Polish (Windows maintenance suite) covering architectural style, crate layout, type-safety patterns, plugin/adapter registration, error handling discipline, testing strategy, and contributor docs.",
+  "type": "technical",
+  "depth": "medium",
+  "timestamp": "2026-05-28T00:00:00Z",
+  "confidence": "high",
+  "sections": [
+    "Architectural style: hexagonal (ports & adapters)",
+    "Cargo workspace layout",
+    "Typestate for cleanup pipeline",
+    "Distributed category registration via inventory",
+    "Error handling discipline (thiserror in libs, anyhow in bins)",
+    "Testing & contributor conventions",
+    "Optional entrait for DI",
+    "Tooling enforcement"
+  ],
+  "findings": [
+    {
+      "subtopic": "Hexagonal architecture is the recommended style",
+      "claim": "Multiple production Rust projects (Banker, hexagonal-rust, blueprint-hexagonal-rust, Hextacy) converge on the hexagonal/ports-and-adapters split: pure domain crate + application crate + adapter crate + bin crates. Polish should adopt this with crates polish-core (domain), polish-app (use cases), polish-adapters (infra), polish-ipc (wire types), polish-test-fixtures, plus 4 binaries.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://www.howtocodeit.com/guides/master-hexagonal-architecture-in-rust",
+        "http://tuttlem.github.io/2025/08/31/hexagonal-architecture-in-rust.html",
+        "https://www.barrage.net/blog/technology/how-to-apply-hexagonal-architecture-to-rust",
+        "https://github.com/antoinecarton/hexagonal-rust",
+        "https://github.com/fteychene/blueprint-hexagonal-rust"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Typestate pattern for cleanup pipeline",
+      "claim": "Typestate encodes state in the type (Cleanup<Scanned>, Cleanup<Previewed>, Cleanup<Executed>, Cleanup<Restorable>) so invalid transitions fail to compile. Zero runtime cost — marker structs are 0-sized, all checking happens at compile time. Sealed traits prevent external crates from adding states. Maps directly to Polish's scan→preview→execute→quarantine→restore flow.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://cliffle.com/blog/rust-typestate/",
+        "https://farazdagi.com/posts/2024-04-07-typestate-pattern/",
+        "https://softwarepatternslexicon.com/rust/idiomatic-rust-patterns/the-typestate-pattern/",
+        "https://github.com/eboody/statum"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Distributed category registration via inventory crate",
+      "claim": "dtolnay/inventory provides typed distributed plugin registration with no central registry file. Contributors add a new file in polish-adapters/src/categories/<id>.rs with inventory::submit!(CategoryEntry {...}); engine collects all entries at startup via inventory::iter. Eliminates merge conflicts on contributor PRs. Works across statically and dynamically linked code. Production-stable; maintained by dtolnay (most respected Rust library author). linkme is the alternative without life-before-main.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://github.com/dtolnay/inventory",
+        "https://lib.rs/crates/inventory",
+        "https://docs.rs/inventory",
+        "https://donsz.nl/blog/global-registration/"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "thiserror in libs + anyhow in bins is the convergent best practice",
+      "claim": "2026 sources all agree: thiserror for libraries (callers need typed variants to match on), anyhow for application binaries (chain + display friendly). Use #[source] / #[from] to preserve causes. #[error(transparent)] for forwarding. Never use anyhow in public library APIs.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://oneuptime.com/blog/post/2026-01-25-error-types-thiserror-anyhow-rust/view",
+        "https://www.carolinemorton.co.uk/blog/rust-error-handling-anyhow-thiserror/",
+        "https://www.lpalmieri.com/posts/error-handling-rust/"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Trait objects + mockall for testing adapter architecture",
+      "claim": "Define ports as traits in polish-core, implement in polish-adapters, mock with mockall in polish-test-fixtures. Use dyn dispatch (trait objects) for collections of heterogeneous categories; generic dispatch for hot paths. Mockall auto-derives mocks from traits.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://docs.rs/mockall/latest/mockall/",
+        "https://developerlife.com/2024/04/28/rust-polymorphism-dyn-impl-trait-objects-for-testing-and-extensibiity/",
+        "https://leapcell.io/blog/dynamic-dispatch-and-dependency-injection-with-trait-objects-in-rust-web-services"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "entrait as optional DI friction reducer",
+      "claim": "entrait crate auto-generates trait + impl + mock from a single function definition. Reduces boilerplate vs hand-rolled traits + mockall. Trade-off: macro magic + steeper learning curve. Recommendation: start with explicit traits + mockall (transparent, teachable); adopt entrait only if boilerplate becomes painful at scale.",
+      "confidence": "single-source",
+      "sources": [
+        "https://docs.rs/entrait/latest/entrait/"
+      ],
+      "relevance": "medium"
+    }
+  ],
+  "keyInsights": [
+    "Hexagonal architecture is overkill for tiny projects but exactly the right cost for Polish's multi-year + multi-binary + open-core + contributor-extensible profile.",
+    "Typestate pushes Polish's cleanup-pipeline invariants from runtime checks to compile-time guarantees. Zero runtime cost. Catches whole classes of bugs (execute-before-preview, restore-before-quarantine) at cargo build time.",
+    "inventory crate makes contributor onboarding for new cleanup categories trivially merge-conflict-free — one new file, zero central registry edits.",
+    "Strict layered crate split + cargo-deny dependency direction rules + clippy denylist convert the 'rules contributors must remember' into 'rules CI rejects.' Architecture survives turnover.",
+    "Each port = one trait in polish-core. Each adapter = one impl in polish-adapters. Each mock = one mockall::automock derive. Pattern is repeatable for every new I/O boundary."
+  ],
+  "redFlags": [
+    "Hexagonal architecture introduces meaningful upfront cost (crate split, trait definitions, dep wiring). Premature optimization for a project that doesn't ship is real risk — must commit to the build cadence or this becomes wasted effort.",
+    "inventory uses life-before-main initialization which is platform-sensitive (works on Windows but could surprise contributors who haven't seen this pattern).",
+    "Tauri 2 hexagonal split for the UI side was NOT covered in this research — needs separate research before polish-ui is built.",
+    "Strict no-unwrap / no-panic lints catch real bugs but slow initial development. Worth it; preview before enforcing."
+  ],
+  "gaps": [
+    "Tauri 2 + hexagonal pattern not researched — Tauri commands as inbound adapters likely answer but unconfirmed.",
+    "CQRS / event-sourcing for .pq quarantine state not researched. Could be elegant but adds complexity.",
+    "async vs sync ports not deeply researched — sync examples dominated. Polish probably wants async via tokio + async-trait or stable async fn in traits (Rust 1.75+).",
+    "Tauri command boundary serialization vs polish-ipc named-pipe serialization — should they share serde types from polish-ipc? Likely yes but not verified.",
+    "Performance benchmark of dyn Category dispatch in hot scan loops — assumed negligible (I/O-dominated) but not measured."
+  ],
+  "sources": [
+    {"url": "https://www.howtocodeit.com/guides/master-hexagonal-architecture-in-rust", "title": "Master Hexagonal Architecture in Rust (howtocodeit)", "relevance": "high"},
+    {"url": "http://tuttlem.github.io/2025/08/31/hexagonal-architecture-in-rust.html", "title": "Hexagonal Architecture in Rust (tuttlem)", "relevance": "high"},
+    {"url": "https://www.barrage.net/blog/technology/how-to-apply-hexagonal-architecture-to-rust", "title": "How to apply hexagonal architecture to Rust (Barrage)", "relevance": "medium"},
+    {"url": "https://github.com/antoinecarton/hexagonal-rust", "title": "hexagonal-rust reference impl", "relevance": "medium"},
+    {"url": "https://github.com/fteychene/blueprint-hexagonal-rust", "title": "blueprint-hexagonal-rust", "relevance": "medium"},
+    {"url": "https://lib.rs/crates/hextacy", "title": "Hextacy crate", "relevance": "medium"},
+    {"url": "https://cliffle.com/blog/rust-typestate/", "title": "The Typestate Pattern in Rust (Cliffle)", "relevance": "high"},
+    {"url": "https://farazdagi.com/posts/2024-04-07-typestate-pattern/", "title": "Typestate Pattern in Rust (Farazdagi)", "relevance": "medium"},
+    {"url": "https://softwarepatternslexicon.com/rust/idiomatic-rust-patterns/the-typestate-pattern/", "title": "Software Patterns Lexicon — Typestate in Rust", "relevance": "medium"},
+    {"url": "https://github.com/eboody/statum", "title": "statum — typestate macro lib", "relevance": "medium"},
+    {"url": "https://github.com/dtolnay/inventory", "title": "dtolnay/inventory — distributed plugin registration", "relevance": "high"},
+    {"url": "https://lib.rs/crates/inventory", "title": "INVENTORY (Lib.rs)", "relevance": "high"},
+    {"url": "https://docs.rs/inventory", "title": "inventory docs.rs", "relevance": "high"},
+    {"url": "https://donsz.nl/blog/global-registration/", "title": "Global Registration approaches", "relevance": "medium"},
+    {"url": "https://oneuptime.com/blog/post/2026-01-25-error-types-thiserror-anyhow-rust/view", "title": "OneUptime — thiserror & anyhow design (2026-01-25)", "relevance": "high"},
+    {"url": "https://www.carolinemorton.co.uk/blog/rust-error-handling-anyhow-thiserror/", "title": "Caroline Morton — anyhow and thiserror", "relevance": "medium"},
+    {"url": "https://www.lpalmieri.com/posts/error-handling-rust/", "title": "Luca Palmieri — Error Handling deep-dive", "relevance": "high"},
+    {"url": "https://docs.rs/mockall/latest/mockall/", "title": "mockall docs", "relevance": "high"},
+    {"url": "https://developerlife.com/2024/04/28/rust-polymorphism-dyn-impl-trait-objects-for-testing-and-extensibiity/", "title": "Rust polymorphism for testing & extensibility", "relevance": "medium"},
+    {"url": "https://leapcell.io/blog/dynamic-dispatch-and-dependency-injection-with-trait-objects-in-rust-web-services", "title": "Dynamic Dispatch & DI with Trait Objects", "relevance": "medium"},
+    {"url": "https://docs.rs/entrait/latest/entrait/", "title": "entrait crate", "relevance": "medium"},
+    {"url": "https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html", "title": "Cargo Workspaces (Rust book)", "relevance": "high"},
+    {"url": "https://doc.rust-lang.org/cargo/reference/cargo-targets.html", "title": "Cargo Targets reference", "relevance": "high"}
+  ],
+  "searchQueriesRun": [
+    "Rust hexagonal architecture ports adapters domain crate large project example",
+    "Rust typestate pattern sealed trait compile-time state machine 2026",
+    "Rust inventory linkme submit crate auto register distributed plugins",
+    "Rust thiserror anyhow library application error handling best practice 2026",
+    "Rust trait object dyn dispatch adapter pattern testing mockall"
+  ],
+  "searchCount": 5,
+  "fetchCount": 0,
+  "calledBy": "standalone"
+}

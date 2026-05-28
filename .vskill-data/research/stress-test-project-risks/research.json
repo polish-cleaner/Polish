@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0.0",
+  "query": "Stress-test top load-bearing risks in PROJECT.md v2 with current 2026 external sources",
+  "refinedQuery": "Validate PROJECT.md §9 risk register entries — Tauri service update, SmartScreen/Defender, MS native parity, OSS conversion, Polish trademark — against current canonical sources",
+  "type": "technical+competitive+domain",
+  "depth": "medium",
+  "timestamp": "2026-05-28T00:00:00Z",
+  "confidence": "medium-high",
+  "sections": [
+    "Risk #1 — Tauri service-aware updates",
+    "Risk #2 — SmartScreen/Defender SYSTEM-service friction",
+    "Risk #3 — Microsoft native parity",
+    "Risk #4 — Conversion benchmark realism",
+    "Risk #5 — Polish trademark conflict",
+    "NEW Risk — Smart App Control"
+  ],
+  "findings": [
+    {
+      "subtopic": "Tauri 2 service-aware updates",
+      "claim": "Tauri sidecar pattern does NOT fit external Windows services (lifecycle tied to UI). Two-process pattern is feasible (Firezone in prod) but auto-update of the service binary has no canonical Tauri pattern. PROJECT.md spike scope is correct; add named-pipe IPC + service stop/swap/restart to spike checklist.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://v2.tauri.app/develop/sidecar/",
+        "https://v2.tauri.app/plugin/updater/",
+        "https://www.firezone.dev/blog/using-tauri",
+        "https://dev.to/hiyoyok/ipc-pipe-vs-unix-socket-for-a-resident-daemon-in-tauri-what-i-learned-fa6"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "EV cert + SmartScreen seasoning",
+      "claim": "Per MS Learn (2026-05-09): EV no longer bypasses SmartScreen. OV and EV treated identically. Reputation builds from 'several weeks and hundreds of clean installs.' PROJECT.md mitigation should switch from SignPath/Certum to Microsoft Artifact Signing (~$10/mo, no token, CI/CD-native).",
+      "confidence": "confirmed",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation",
+        "https://learn.microsoft.com/en-us/azure/trusted-signing/",
+        "https://sslinsights.com/sectigo-code-signing-certificate-guide/"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Conflicting EV-bypass claims",
+      "claim": "Multiple CA marketing sites (DigiCert, Sectigo, SSL.com) still claim EV grants instant SmartScreen reputation. Microsoft canonical doc contradicts this explicitly. Trust Microsoft, ignore CA marketing.",
+      "confidence": "conflicting",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation",
+        "https://support.sectigo.com/PS_KnowledgeDetailPageFaq?Id=kA01N000000zFJx",
+        "https://www.ssl.com/faqs/which-code-signing-certificate-do-i-need-ev-ov/",
+        "https://comparecheapssl.com/why-digicert-ev-code-signing-is-a-must-for-microsoft-smartscreen-reputation/"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Microsoft native parity (WSL shrink)",
+      "claim": "wsl --manage <distro> --resize is shipped GA in WSL 2.5+. Auto-shrink-on-idle not yet shipped but is plausible 12-month roadmap given open issue #4699. PROJECT.md 12-24 month horizon for WSL wedge is too long — tighten to 6-18 months for WSL specifically; Storage Sense dev-cache integration is still 12-24 mo.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/wsl/disk-space",
+        "https://github.com/microsoft/WSL/releases",
+        "https://github.com/microsoft/WSL/issues/4699",
+        "https://www.windowslatest.com/2026/03/31/microsoft-to-upgrade-windows-subsystem-for-linux-wsl-with-faster-file-access-better-networking-and-easier-setup/"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "OSS free-flagship paid conversion",
+      "claim": "Industry benchmarks: 0.3-1% for mass-market dev tools, 1-3% enterprise OSS, 3%+ exceptional. PROJECT.md's 0.3-0.8% (stretch 1.0%) is well-calibrated. Structural LTV/CAC problem not solvable by conversion tweaks alone.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://www.getmonetizely.com/articles/whats-the-optimal-conversion-rate-from-free-to-paid-in-open-source-saas",
+        "https://firstpagesage.com/seo-blog/saas-freemium-conversion-rates/",
+        "https://www.withdaydream.com/library/insights/freemium-conversion-rate"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Polish software trademark",
+      "claim": "Surface search returned no exact 'POLISH' software-class Class 9/42 mark. Many polish-related marks exist (mostly nail polish). Inconclusive — direct USPTO TESS + EUIPO eSearch Plus check required pre-launch. PROJECT.md risk rating High/High appropriate.",
+      "confidence": "single-source",
+      "sources": [
+        "https://www.trademarkia.com",
+        "https://trademarks.justia.com"
+      ],
+      "relevance": "medium"
+    },
+    {
+      "subtopic": "Smart App Control (NEW risk)",
+      "claim": "Win11 Smart App Control blocks execution of unsigned/low-rep files at runtime, not just download. Applies to all executable files including service binaries post-install. Default-on for clean Win11 installs since 22H2. No user 'Run anyway' override on SAC-enabled machines. PROJECT.md §9 missing this risk entirely.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation"
+      ],
+      "relevance": "high"
+    }
+  ],
+  "keyInsights": [
+    "Microsoft now treats OV and EV code signing certificates identically for SmartScreen — PROJECT.md mitigation should swap to Artifact Signing (~$10/mo, CI/CD-native, no hardware token)",
+    "WSL --manage --resize is shipped GA — Polish's WSL Dev wedge has a 6-18 month window, not 12-24",
+    "Smart App Control on Win11 is a new and missing risk in PROJECT.md §9 — blocks low-rep binaries at execution, not just download",
+    "Tauri's standard sidecar pattern does not fit Windows-service architecture; the Week 1-3 spike PROJECT.md plans is the correct response",
+    "OSS free-flagship conversion benchmarks (0.3-1%) confirm PROJECT.md's honest projections — Pro tier LTV/CAC is structurally broken unless feature expansion or higher ACV"
+  ],
+  "redFlags": [
+    "PROJECT.md signing strategy (SignPath Foundation 4-8 week wait + Certum fallback) is outdated — Microsoft Artifact Signing supersedes both for this use case",
+    "PROJECT.md MS native parity 12-24 month assumption too lax for WSL specifically",
+    "Smart App Control missing from risk register entirely",
+    "CA vendor marketing copy on EV certificates is misleading; do not rely on it for SmartScreen planning"
+  ],
+  "gaps": [
+    "No quantitative data on Defender PUP/HackTool false-positive rates for cleanup utilities",
+    "No direct USPTO TESS / EUIPO Class 9/42 'POLISH' authoritative check (web search insufficient)",
+    "No published install-completion delta for new-cert binaries on SAC-enabled Win11",
+    "No canonical Tauri 2 + Windows-service auto-update example or sample repo",
+    "WSL 2.5 --manage --resize adoption rate among dev population unknown — proxy for wedge erosion"
+  ],
+  "sources": [
+    {"url": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation", "title": "Microsoft Learn — SmartScreen reputation for Windows app developers", "relevance": "high"},
+    {"url": "https://learn.microsoft.com/en-us/windows/wsl/disk-space", "title": "Microsoft Learn — Manage WSL disk space", "relevance": "high"},
+    {"url": "https://learn.microsoft.com/en-us/azure/trusted-signing/", "title": "Microsoft Azure Artifact Signing (formerly Trusted Signing)", "relevance": "high"},
+    {"url": "https://learn.microsoft.com/en-us/unified-secops/criteria", "title": "Microsoft unwanted software criteria", "relevance": "high"},
+    {"url": "https://v2.tauri.app/plugin/updater/", "title": "Tauri 2 Updater plugin", "relevance": "high"},
+    {"url": "https://v2.tauri.app/develop/sidecar/", "title": "Tauri 2 Sidecar docs", "relevance": "high"},
+    {"url": "https://v2.tauri.app/concept/process-model/", "title": "Tauri 2 Process Model", "relevance": "high"},
+    {"url": "https://www.firezone.dev/blog/using-tauri", "title": "Firezone — Tauri two-process privileged architecture", "relevance": "high"},
+    {"url": "https://dev.to/hiyoyok/ipc-pipe-vs-unix-socket-for-a-resident-daemon-in-tauri-what-i-learned-fa6", "title": "DEV — IPC Pipe vs Unix Socket for Tauri daemon", "relevance": "medium"},
+    {"url": "https://github.com/microsoft/WSL/releases", "title": "WSL releases (GitHub)", "relevance": "high"},
+    {"url": "https://windowsnews.ai/article/wsl-277-and-275-preview-bring-linux-kernel-618-vhd-access-fixes-and-wslg-package-update.419536", "title": "WSL 2.7.5/2.7.7 May 2026 fixes", "relevance": "medium"},
+    {"url": "https://github.com/microsoft/WSL/issues/4699", "title": "GitHub WSL #4699 — auto-shrink request", "relevance": "medium"},
+    {"url": "https://www.windowslatest.com/2026/03/31/microsoft-to-upgrade-windows-subsystem-for-linux-wsl-with-faster-file-access-better-networking-and-easier-setup/", "title": "Windows Latest — March 2026 WSL upgrade preview", "relevance": "medium"},
+    {"url": "https://sslinsights.com/sectigo-code-signing-certificate-guide/", "title": "Sectigo Code Signing 2026 guide (CSC-31)", "relevance": "medium"},
+    {"url": "https://www.getmonetizely.com/articles/whats-the-optimal-conversion-rate-from-free-to-paid-in-open-source-saas", "title": "Monetizely — OSS SaaS conversion rates", "relevance": "medium"},
+    {"url": "https://firstpagesage.com/seo-blog/saas-freemium-conversion-rates/", "title": "First Page Sage — 2026 SaaS Freemium benchmarks", "relevance": "medium"},
+    {"url": "https://www.withdaydream.com/library/insights/freemium-conversion-rate", "title": "Daydream — Freemium conversion benchmark library", "relevance": "medium"},
+    {"url": "https://www.appcues.com/blog/free-to-paid-conversion", "title": "Appcues — Free-to-paid improvement", "relevance": "low"},
+    {"url": "https://www.trademarkia.com", "title": "Trademarkia search portal", "relevance": "low"},
+    {"url": "https://trademarks.justia.com", "title": "Justia Trademarks", "relevance": "low"}
+  ],
+  "searchQueriesRun": [
+    "Tauri 2 Windows service auto-update sidecar pattern 2026",
+    "EV code signing SmartScreen reputation seasoning install rate 2026",
+    "wsl --shrink GA release Windows 11 2026 Storage Sense dev caches",
+    "open source freemium desktop app paid conversion rate benchmark",
+    "Polish trademark software USPTO class 9 class 42",
+    "Tauri 2 separate Windows service IPC named pipe Rust auto-update architecture",
+    "SmartScreen warning new EV certificate install conversion drop percent",
+    "microsoft/WSL wsl --shrink release status 2026 preview GA",
+    "polish software trademark conflict utility cleaner app name",
+    "Windows Defender flag PUP HackTool cleaner utility SYSTEM service whitelist Microsoft MAPS",
+    "trademark polish trademarkia justia software",
+    "npkill Windows users dev cache cleaner adoption stars 2026",
+    "Tauri 2 Windows service architecture two process privileged backend"
+  ],
+  "searchCount": 13,
+  "fetchCount": 2,
+  "calledBy": "standalone"
+}

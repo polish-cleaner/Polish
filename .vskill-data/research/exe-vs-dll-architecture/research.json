@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.0.0",
+  "query": "Should Polish use single-exe + DLL plugin architecture instead of multiple .exe binaries? Will multi-exe scale as features grow?",
+  "refinedQuery": "Compare multi-exe two-process architecture (PLAN.md §4) vs single-exe with DLL plugin loading for the Polish Windows maintenance suite, considering privilege boundary, feature scaling, signing cost, open-core enforcement, and real-world precedent.",
+  "type": "technical",
+  "depth": "medium",
+  "timestamp": "2026-05-28T00:00:00Z",
+  "confidence": "high",
+  "sections": [
+    "Privilege boundary forces multi-process",
+    "Multi-exe vs single-exe + DLL trade-offs",
+    "Rust workspace + shared engine library pattern",
+    "Rust plugin patterns (abi_stable / libloading)",
+    "Real-world Windows-service product precedent",
+    "Open-core enforcement: separate binary vs DLL"
+  ],
+  "findings": [
+    {
+      "subtopic": "Session 0 isolation forces multi-process",
+      "claim": "Windows Vista+ isolates services in session 0 with no graphical context. SYSTEM service and user UI CANNOT run in the same process. Single-exe + DLLs cannot replace the multi-exe split for the privilege boundary. This is an OS architectural fact, not a design choice.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://inairspace.com/blogs/learn-with-inair/windows-service-interact-with-desktop-a-deep-dive-into-secure-system-architecture",
+        "https://deepwiki.com/eythaann/Seelen-UI/2.4-service-architecture"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Production peer architectures",
+      "claim": "Tailscale ships 3 binaries (tailscaled.exe service with internal parent/subprocess split, tailscale.exe CLI, GUI binary). Explicitly split GUI from service in v1.6 for clean separation. WireGuard Windows ships 4+ binaries (installer, wireguard.exe manager+UI, wg.exe CLI, per-tunnel WireGuardTunnel$name services). Firezone uses two-process Tauri with privileged backend. Multi-exe is the convergent pattern in this product category.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://github.com/tailscale/tailscale/issues/1232",
+        "https://deepwiki.com/tailscale/tailscale/6-build-and-deployment",
+        "https://git.zx2c4.com/wireguard-windows/about/docs/enterprise.md",
+        "https://www.firezone.dev/blog/using-tauri"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Signing reputation cost of multiple binaries",
+      "claim": "Multi-exe does not multiply signing cost much. Per MS Learn + Artifact Signing GA: publisher reputation is anchored to verified identity (not per-binary). File hash reputation seasons per binary but publisher signal carries across all binaries signed by same identity. Recommended: use consistent signing identity across all binaries.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation",
+        "https://techcommunity.microsoft.com/blog/microsoft-security-blog/simplifying-code-signing-for-windows-apps-artifact-signing-ga/4482789"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Rust workspace with shared library is the no-duplication answer",
+      "claim": "Cargo workspaces support one shared lib crate (rlib) + multiple bin crates depending on it. Recommended Polish layout: polish-engine (rlib, MIT) + polish-ipc (rlib, MIT) + polish-svc / polish-ui / polish-cli / polish-pro (bin crates). Zero code duplication. Adding a cleanup category = add module to polish-engine, all binaries get it automatically.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html",
+        "https://doc.rust-lang.org/cargo/reference/cargo-targets.html"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Rust DLL plugin systems are production-viable but caveat-heavy",
+      "claim": "abi_stable + libloading enable runtime plugin loading. Caveats: Rust ABI unstable across rustc versions and even compiler runs (abi_stable mitigates via C-ABI boundary); no sandbox (malicious plugin = full system access); plugins must be built with same rustc as host. Production-OK for trusted/signed plugins, NOT for untrusted third-party. Worth considering for v2+ if community extensions become a goal; not needed for v1.0.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://crates.io/crates/abi_stable",
+        "https://nullderef.com/blog/plugin-abi-stable/",
+        "https://nullderef.com/blog/plugin-start/",
+        "https://users.rust-lang.org/t/abi-stability-guarantee-of-dylib-vs-cdylib/50879"
+      ],
+      "relevance": "high"
+    },
+    {
+      "subtopic": "Open-core enforcement: separate binary vs DLL",
+      "claim": "Separate proprietary binary = stricter open-core enforcement (unambiguous license boundary). DLL plugin = more flexible integration but requires upfront plugin API design (premature abstraction risk). PLAN.md plan for polish-pro.exe as separate closed-source binary linking MIT polish-engine is the recommended pattern.",
+      "confidence": "confirmed",
+      "sources": [
+        "https://oneuptime.com/blog/post/2026-02-14-open-source-vs-open-core/view",
+        "https://about.gitlab.com/blog/2022/07/14/open-core-is-worse-than-plugins",
+        "https://www.termsfeed.com/blog/dual-licensing-vs-open-core/"
+      ],
+      "relevance": "high"
+    }
+  ],
+  "keyInsights": [
+    "EXE count is a function of trust/privilege boundaries; feature count is a function of what's inside the shared engine library. They are orthogonal.",
+    "Session 0 isolation since Windows Vista makes single-exe SYSTEM+user impossible. Multi-exe is non-negotiable for the service/UI split.",
+    "Tailscale and WireGuard both ship multi-exe in production at large scale — strongest possible counter-evidence to the 'too many exes won't scale' concern.",
+    "Rust cargo workspace + shared rlib eliminates code duplication while keeping multi-exe. Best of both worlds for v1.0.",
+    "DLL plugin system (abi_stable) is a v2+ feature evaluation, not a v1.0 architectural decision. Premature for current scope.",
+    "Publisher reputation in MS Artifact Signing is identity-anchored, not per-certificate, so multi-exe does not linearly multiply seasoning cost."
+  ],
+  "redFlags": [
+    "PLAN.md §4 does NOT currently explain WHY multi-exe is required — a future contributor or AI agent might naively suggest collapsing the binaries. Add a one-paragraph rationale citing Session 0 isolation + Tailscale/WireGuard precedent.",
+    "PLAN.md §6 Repository layout does NOT yet show the cargo workspace structure with polish-engine as shared rlib. Risk: code duplication starts during implementation. Make the workspace structure explicit before Week 4 build begins.",
+    "abi_stable plugin system has no sandbox; if Polish ever wants community plugins, must combine with signing requirement + trust review process."
+  ],
+  "gaps": [
+    "No Tauri 2-specific cargo workspace pattern data — generic Cargo workspace info found, but Tauri's bundler/Tauri config + multi-binary workspace needs verification during Week 1-3 spike.",
+    "No quantitative polish-engine binary size impact under static linking into 4 binaries vs dynamic. Likely tens of MB; measure during spike.",
+    "Plugin API design for v2+ deferred — no concrete spec found because category doesn't have established conventions yet.",
+    "Smart App Control multi-binary install completion impact unknown — inferred each binary needs its own file-hash reputation but publisher signal helps.",
+    "MSI/NSIS installer flow for 4-binary install not researched in detail — both Tailscale and WireGuard use one installer dropping all binaries."
+  ],
+  "sources": [
+    {"url": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation", "title": "MS Learn — SmartScreen reputation", "relevance": "high"},
+    {"url": "https://techcommunity.microsoft.com/blog/microsoft-security-blog/simplifying-code-signing-for-windows-apps-artifact-signing-ga/4482789", "title": "MS Tech Community — Artifact Signing GA", "relevance": "high"},
+    {"url": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options", "title": "MS Learn — Code signing options", "relevance": "high"},
+    {"url": "https://inairspace.com/blogs/learn-with-inair/windows-service-interact-with-desktop-a-deep-dive-into-secure-system-architecture", "title": "Inairspace — Windows Service Interact with Desktop", "relevance": "high"},
+    {"url": "https://deepwiki.com/eythaann/Seelen-UI/2.4-service-architecture", "title": "Seelen-UI Service Architecture", "relevance": "medium"},
+    {"url": "https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html", "title": "Cargo Workspaces (Rust book ch14.3)", "relevance": "high"},
+    {"url": "https://doc.rust-lang.org/cargo/reference/cargo-targets.html", "title": "Cargo Targets reference", "relevance": "high"},
+    {"url": "https://crates.io/crates/abi_stable", "title": "abi_stable crate", "relevance": "high"},
+    {"url": "https://nullderef.com/blog/plugin-abi-stable/", "title": "NullDeref — Plugins in Rust: Reducing the Pain", "relevance": "high"},
+    {"url": "https://nullderef.com/blog/plugin-start/", "title": "NullDeref — Plugins in Rust: Getting Started", "relevance": "high"},
+    {"url": "https://dev.to/mineichen/plugin-based-architecture-in-rust-4om7", "title": "DEV — Plugin-based architecture in Rust", "relevance": "medium"},
+    {"url": "https://users.rust-lang.org/t/abi-stability-guarantee-of-dylib-vs-cdylib/50879", "title": "Rust forum — ABI stability dylib vs cdylib", "relevance": "medium"},
+    {"url": "https://github.com/tailscale/tailscale/issues/1232", "title": "Tailscale issue #1232 (windows: make service open source)", "relevance": "high"},
+    {"url": "https://deepwiki.com/tailscale/tailscale/6-build-and-deployment", "title": "Tailscale Client Applications (DeepWiki)", "relevance": "high"},
+    {"url": "https://git.zx2c4.com/wireguard-windows/about/docs/enterprise.md", "title": "WireGuard Windows enterprise docs", "relevance": "high"},
+    {"url": "https://www.firezone.dev/blog/using-tauri", "title": "Firezone — Tauri two-process", "relevance": "high"},
+    {"url": "https://oneuptime.com/blog/post/2026-02-14-open-source-vs-open-core/view", "title": "OneUptime — Open Source vs Open Core", "relevance": "medium"},
+    {"url": "https://about.gitlab.com/blog/2022/07/14/open-core-is-worse-than-plugins", "title": "GitLab — Open core vs plugins", "relevance": "medium"},
+    {"url": "https://www.termsfeed.com/blog/dual-licensing-vs-open-core/", "title": "TermsFeed — Dual Licensing vs Open Core", "relevance": "medium"}
+  ],
+  "searchQueriesRun": [
+    "Windows service UI client architecture two process privilege boundary why separate exe",
+    "Rust DLL plugin architecture vs multi-process desktop app Windows trade-offs",
+    "Rust cdylib libloading abi_stable plugin system production 2026",
+    "Tailscale Wireguard Windows service binaries architecture separate exe",
+    "open core commercial plugin separate binary vs dynamic library enforcement",
+    "Wireguard Windows installer architecture wireguard.exe tunnel service binaries",
+    "Rust workspace cargo cdylib lib crate multiple bin targets shared engine library",
+    "Windows code signing reputation per binary publisher signature seasoning multiple exes"
+  ],
+  "searchCount": 8,
+  "fetchCount": 0,
+  "calledBy": "standalone"
+}

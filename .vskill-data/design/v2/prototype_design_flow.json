@@ -1,0 +1,190 @@
+{
+  "version": "2.0.0",
+  "generated_at": "2026-05-28T00:00:00Z",
+  "source": {
+    "kind": "user-authored prototype",
+    "root": ".vskill-data/Polish-prototype/",
+    "html_shell": "Polish.html",
+    "jsx_root": "src/app.jsx",
+    "tweaks": "tweaks-panel.jsx"
+  },
+  "project": {
+    "name": "Polish",
+    "type": "desktop_app",
+    "runtime": "Tauri 2 WebView2 (Chromium)",
+    "style": "editorial-cream",
+    "theme": "light",
+    "color_space": "oklch",
+    "accessibility": "WCAG AA",
+    "tagline": "Polish your PC."
+  },
+  "tokens_ref": "./design-tokens.json",
+  "pages": [
+    {
+      "id": "dashboard",
+      "component": "Dashboard",
+      "file": ".vskill-data/Polish-prototype/src/dashboard.jsx",
+      "title": "Dashboard",
+      "description": "Default landing page. Recoverable-space summary, charts (charts.jsx), category widgets, daily-toast preview (auto-shows ~5.5s after mount).",
+      "interactions": [
+        "onStartCleanWith(mode, selected) -> jump to <CleanWizard> pre-seeded",
+        "onNavigate(id) -> sidebar routing"
+      ],
+      "screenshots": [
+        "screenshots/01-dashboard-charts.png",
+        "screenshots/01-dashboard-widgets.png",
+        "screenshots/dashboard-check.png",
+        "screenshots/dashboard-scrolled.png"
+      ]
+    },
+    {
+      "id": "clean",
+      "component": "CleanWizard",
+      "file": ".vskill-data/Polish-prototype/src/clean.jsx",
+      "title": "Clean",
+      "description": "Scan + clean flow. Modes: light / balanced / aggressive. Initial mode + selection can be pre-seeded from dashboard. Replaces the v1 plan's separate 'scan-results' page.",
+      "interactions": [
+        "initialMode prop seeds mode toggle",
+        "initialSelected prop pre-selects rows",
+        "onExit() -> dashboard",
+        "onNavigate(id) -> sidebar routing"
+      ],
+      "screenshots": [
+        "screenshots/01-clean-full.png",
+        "screenshots/02-clean-full.png",
+        "screenshots/clean-check.png"
+      ]
+    },
+    {
+      "id": "quarantine",
+      "component": "Quarantine",
+      "file": ".vskill-data/Polish-prototype/src/quarantine.jsx",
+      "title": "Quarantine",
+      "description": ".pq bundle list with right-side drawer for bundle detail (manifest, BLAKE3 status, restore/delete actions).",
+      "interactions": [
+        "onNotify(toast) -> emit toast via app.jsx",
+        "Drawer open/close on row click"
+      ],
+      "screenshots": [
+        "screenshots/01-drawer-check.png",
+        "screenshots/01-drawer-check2.png",
+        "screenshots/01-drawer-check3.png",
+        "screenshots/01-drawer-final.png",
+        "screenshots/02-drawer-check.png",
+        "screenshots/02-drawer-final.png"
+      ]
+    },
+    {
+      "id": "history",
+      "component": "History",
+      "file": ".vskill-data/Polish-prototype/src/history.jsx",
+      "title": "History",
+      "description": "Past scan log. Date, mode, items removed, total recovered, link to restore via quarantine.",
+      "interactions": []
+    },
+    {
+      "id": "settings",
+      "component": "Settings",
+      "file": ".vskill-data/Polish-prototype/src/settings.jsx",
+      "title": "Settings",
+      "description": "Profiles, scheduling, telemetry (off by default), exclusions, signing/cert info, advanced options.",
+      "interactions": []
+    },
+    {
+      "id": "format-prep",
+      "component": "FormatPrep",
+      "file": ".vskill-data/Polish-prototype/src/format-prep.jsx",
+      "title": "Format Prep",
+      "description": "7-step wizard. Pro feature targeted for v1.2; designed in v2 to lock visual language.",
+      "interactions": [
+        "onNavigate(id)",
+        "showProBadges prop from tweaks panel"
+      ]
+    }
+  ],
+  "missing_pages": [
+    {
+      "id": "onboarding",
+      "reason": "First-run flow not yet drawn in prototype. Track as v2 gap; build before v1.0 ship."
+    }
+  ],
+  "components": [
+    { "id": "sidebar", "file": "src/sidebar.jsx", "props": ["currentPage", "onNavigate", "showProBadges"] },
+    { "id": "card", "variants": ["default", "sunken"], "source": "Polish.html CSS" },
+    { "id": "btn", "variants": ["primary", "secondary", "ghost", "danger", "sm", "lg", "disabled"], "source": "Polish.html CSS" },
+    { "id": "badge", "variants": ["default", "accent", "warn", "danger", "pro"], "source": "Polish.html CSS" },
+    { "id": "dot", "variants": ["base", "good", "warn", "danger", "pulsing"], "source": "Polish.html CSS" },
+    { "id": "progress", "variants": ["determinate", "indeterminate"], "source": "Polish.html CSS" },
+    { "id": "check", "variants": ["default", "checked", "indeterminate"], "source": "Polish.html CSS" },
+    { "id": "toggle", "variants": ["off", "on"], "source": "Polish.html CSS" },
+    { "id": "segmented", "variants": ["default", "active"], "source": "Polish.html CSS" },
+    { "id": "num-display", "variants": ["value", "value+unit"], "source": "Polish.html CSS" },
+    { "id": "divider", "variants": ["horizontal", "vertical"], "source": "Polish.html CSS" },
+    { "id": "page-shell", "parts": ["page", "page-inner", "page-header", "page-title", "page-subtitle"], "source": "Polish.html CSS" },
+    { "id": "wizard-steps", "variants": ["active", "done", "pending"], "source": "Polish.html CSS" },
+    { "id": "drawer", "variants": ["right-side", "backdrop"], "source": "Polish.html CSS" },
+    { "id": "modal", "variants": ["centered", "backdrop"], "source": "Polish.html CSS" },
+    { "id": "tooltip", "trigger": "[data-tip] attr", "source": "Polish.html CSS" },
+    { "id": "toast", "variants": ["good", "warn", "danger"], "source": "Polish.html CSS + app.jsx" },
+    { "id": "chart-*", "file": "src/charts.jsx", "notes": "Dashboard charts; see component file for variants." },
+    { "id": "icon-*", "file": "src/icons.jsx", "notes": "Stroke SVG icon set." },
+    { "id": "tweaks-panel", "file": "tweaks-panel.jsx", "notes": "Dev affordance — accent / density / Pro-badge knobs. Ship behind build flag." }
+  ],
+  "routes": {
+    "dashboard":   "<Dashboard>",
+    "clean":       "<CleanWizard>",
+    "quarantine":  "<Quarantine>",
+    "history":     "<History>",
+    "settings":    "<Settings>",
+    "format-prep": "<FormatPrep>"
+  },
+  "global_state": {
+    "tweaks": {
+      "accent": ["#3d7050", "#2f5f7a", "#7a4f2f", "#5c4a78"],
+      "density": ["compact", "regular", "comfy"],
+      "scenario": ["midlife"],
+      "showPro": "boolean",
+      "tagline": "string"
+    },
+    "toasts": "stacked, auto-dismiss 5s, manual close, position shifts when daily-toast active"
+  },
+  "assets": {
+    "fonts": {
+      "display": "Instrument Serif (italic enabled)",
+      "body": "Inter (400/500/600/700)",
+      "mono": "JetBrains Mono (400/500/600)",
+      "delivery": "Google Fonts <link> via Polish.html head"
+    },
+    "icons": {
+      "source": "src/icons.jsx",
+      "style": "stroke SVG"
+    },
+    "screenshots": ".vskill-data/Polish-prototype/screenshots/*.png"
+  },
+  "viewport": {
+    "primary": "1024-1440 desktop window",
+    "min-window": "880px",
+    "notes": "Tauri desktop app — no true mobile."
+  },
+  "accessibility": {
+    "target": "WCAG AA",
+    "implemented": [
+      "focus-indicators-accent-tinted",
+      "semantic-html",
+      "keyboard-navigation",
+      "status-uses-color-plus-text-plus-dot",
+      "selection-color-tokens"
+    ],
+    "gaps": [
+      "prefers-reduced-motion not wired",
+      "aria-labels audit pending",
+      "screen-reader pass pending"
+    ]
+  },
+  "g3_status": {
+    "ui_score_run": false,
+    "approved_by_user": true,
+    "approved_at": "2026-05-28T00:00:00Z",
+    "note": "User authored the prototype and approved it as canonical. Per-page ui-score loop intentionally bypassed at user instruction."
+  }
+}

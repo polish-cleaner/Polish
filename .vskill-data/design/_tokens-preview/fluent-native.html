@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polish — Variant 1: fluent-native</title>
+<style>
+  :root{
+    --brand-primary:#0078D4; --brand-secondary:#106EBE; --brand-tint:#E5F1FB;
+    --surface-base:#FAFAFA; --surface-elevated:#FFFFFF; --surface-overlay:#F3F3F3;
+    --text-primary:#1A1A1A; --text-secondary:#5C5C5C; --text-tertiary:#8A8A8A;
+    --border:#E5E5E5; --border-strong:#D1D1D1;
+    --success:#107C10; --warning:#FFB900; --error:#D13438;
+    --font-sans:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;
+    --font-mono:"Cascadia Mono",Consolas,monospace;
+    --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px;
+    --r-sm:4px; --r-md:8px;
+    --sh-sm:0 1px 2px rgba(0,0,0,.06);
+    --sh-md:0 2px 8px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-base);color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:1.5}
+  .frame{max-width:920px;margin:24px auto;padding:0 var(--s-5)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:var(--r-sm);background:var(--brand-tint);color:var(--brand-secondary);font-size:12px;font-weight:600}
+  h1{font-size:32px;font-weight:600;margin:var(--s-5) 0 var(--s-2)}
+  h2{font-size:20px;font-weight:600;margin:var(--s-6) 0 var(--s-3)}
+  .lead{color:var(--text-secondary);font-size:16px;margin:0 0 var(--s-5)}
+  .panel{background:var(--surface-elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-5);box-shadow:var(--sh-sm)}
+  .stack{display:grid;gap:var(--s-3)}
+  .row{display:flex;gap:var(--s-3);align-items:center;flex-wrap:wrap}
+  .btn{font:inherit;font-weight:600;padding:8px 16px;border-radius:var(--r-sm);border:1px solid transparent;cursor:pointer}
+  .btn-primary{background:var(--brand-primary);color:#fff}
+  .btn-primary:hover{background:var(--brand-secondary)}
+  .btn-secondary{background:var(--surface-elevated);color:var(--text-primary);border-color:var(--border-strong)}
+  .btn-ghost{background:transparent;color:var(--brand-primary)}
+  .input{font:inherit;padding:8px 12px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface-elevated);width:100%}
+  .input:focus{outline:2px solid var(--brand-primary);outline-offset:-1px;border-color:var(--brand-primary)}
+  .label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:var(--s-1);display:block}
+  .stat{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-4);border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-elevated)}
+  .stat-val{font-size:24px;font-weight:600}
+  .stat-label{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3)}
+  .chip{display:inline-flex;align-items:center;gap:var(--s-1);padding:4px 10px;font-size:12px;font-weight:600;border-radius:9999px}
+  .chip-success{background:#DFF6DD;color:var(--success)}
+  .chip-warn{background:#FFF4CE;color:#9D7300}
+  .chip-error{background:#FDE7E9;color:var(--error)}
+  .mono{font-family:var(--font-mono);font-size:13px;background:var(--surface-overlay);padding:2px 6px;border-radius:var(--r-sm);color:var(--text-secondary)}
+  .swatch{display:flex;flex-direction:column;gap:var(--s-1);align-items:flex-start}
+  .swatch-box{width:48px;height:48px;border-radius:var(--r-sm);border:1px solid var(--border)}
+  .swatch-label{font-size:11px;color:var(--text-secondary);font-family:var(--font-mono)}
+  .grid-swatch{display:grid;grid-template-columns:repeat(8,auto);gap:var(--s-3)}
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="badge">VARIANT 1 — fluent-native</span>
+  <h1>Polish</h1>
+  <p class="lead">Trust-first Windows maintenance. Native Fluent 2 chrome — feels integrated with Windows 11.</p>
+
+  <div class="panel stack">
+    <h2 style="margin-top:0">Buttons</h2>
+    <div class="row">
+      <button class="btn btn-primary">Scan now</button>
+      <button class="btn btn-secondary">View quarantine</button>
+      <button class="btn btn-ghost">Settings</button>
+    </div>
+
+    <h2>Form</h2>
+    <div class="stack" style="max-width:360px">
+      <div>
+        <label class="label" for="i1">Target path</label>
+        <input id="i1" class="input" placeholder="C:\Users\dev\repo" />
+      </div>
+      <div>
+        <label class="label" for="i2">Profile</label>
+        <input id="i2" class="input" value="default.polishprofile" />
+      </div>
+    </div>
+
+    <h2>Stats</h2>
+    <div class="grid-4">
+      <div class="stat"><span class="stat-label">Recoverable</span><span class="stat-val">42.7 GB</span></div>
+      <div class="stat"><span class="stat-label">npm cache</span><span class="stat-val">8.1 GB</span></div>
+      <div class="stat"><span class="stat-label">Quarantined</span><span class="stat-val">3 bundles</span></div>
+      <div class="stat"><span class="stat-label">Last scan</span><span class="stat-val">2h ago</span></div>
+    </div>
+
+    <h2>States</h2>
+    <div class="row">
+      <span class="chip chip-success">● Safe to remove</span>
+      <span class="chip chip-warn">● Review</span>
+      <span class="chip chip-error">● Excluded</span>
+      <span class="mono">polish scan --dry-run</span>
+    </div>
+
+    <h2>Palette</h2>
+    <div class="grid-swatch">
+      <div class="swatch"><div class="swatch-box" style="background:#0078D4"></div><span class="swatch-label">#0078D4</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#106EBE"></div><span class="swatch-label">#106EBE</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#FAFAFA"></div><span class="swatch-label">#FAFAFA</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#1A1A1A"></div><span class="swatch-label">#1A1A1A</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#5C5C5C"></div><span class="swatch-label">#5C5C5C</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#107C10"></div><span class="swatch-label">#107C10</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#FFB900"></div><span class="swatch-label">#FFB900</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#D13438"></div><span class="swatch-label">#D13438</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

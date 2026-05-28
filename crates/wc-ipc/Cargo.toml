@@ -1,0 +1,16 @@
+[package]
+name = "wc-ipc"
+description = "Polish — serde wire types for wc-svc ↔ wc-ui named-pipe IPC"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

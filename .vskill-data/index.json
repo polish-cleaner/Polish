@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "updated_at": "2026-05-28T00:00:00Z",
+  "project": {
+    "latest": "PROJECT.md",
+    "version": 1
+  },
+  "debate": {
+    "latest": "debate/v2/PROJECT.md",
+    "version": 2
+  },
+  "design": {
+    "latest": "design/v2",
+    "version": 2,
+    "variant": "editorial-cream",
+    "source_prototype": "Polish-prototype/",
+    "previous": {
+      "v1": {
+        "path": "design/v1",
+        "variant": "calm-modern",
+        "status": "superseded"
+      }
+    }
+  },
+  "prototype": {
+    "kind": "user-authored",
+    "root": "Polish-prototype/",
+    "entry": "Polish-prototype/Polish.html",
+    "pages": [
+      "dashboard",
+      "clean",
+      "quarantine",
+      "history",
+      "settings",
+      "format-prep"
+    ],
+    "missing": [
+      "onboarding"
+    ]
+  }
+}

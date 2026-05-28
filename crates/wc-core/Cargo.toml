@@ -1,0 +1,22 @@
+[package]
+name = "wc-core"
+description = "Polish — pure domain layer (codename wc-core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+inventory = { workspace = true }
+blake3 = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

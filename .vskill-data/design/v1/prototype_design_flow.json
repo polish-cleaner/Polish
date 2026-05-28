@@ -1,0 +1,157 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-05-28T00:00:00Z",
+  "project": {
+    "name": "Polish",
+    "type": "desktop_app",
+    "runtime": "Tauri 2 WebView",
+    "style": "calm-modern",
+    "theme": "light",
+    "accessibility": "WCAG AA"
+  },
+  "tokens_ref": "./design-tokens.json",
+  "pages": [],
+  "planned_pages": [
+    {
+      "id": "dashboard",
+      "route": "/",
+      "file": "prototype/pages/dashboard.html",
+      "title": "Dashboard",
+      "description": "First-launch view. Overview of recoverable space, last-scan summary, quarantine count, quick actions (Run scan / Open quarantine / View manifest), signed-binary trust badge.",
+      "sections": [
+        { "id": "app-shell", "type": "navigation", "components": ["logo-mark", "nav-links", "version-badge"] },
+        { "id": "hero", "type": "hero", "components": ["badge", "h1-display", "lead-text", "primary-action-row"] },
+        { "id": "overview-stats", "type": "metrics", "components": ["stat-card x 4"] },
+        { "id": "recent-activity", "type": "list", "components": ["activity-row x 3"] },
+        { "id": "trust-strip", "type": "info-strip", "components": ["signed-by", "license-mit", "telemetry-off"] }
+      ]
+    },
+    {
+      "id": "scan-results",
+      "route": "/scan",
+      "file": "prototype/pages/scan-results.html",
+      "title": "Scan results",
+      "description": "Categorized list of recoverable items. Group by category (npm/pnpm/cargo, browser cache, system temp, installers). Per-row checkbox + path + status chip + size. Sticky command bar with quarantine-vs-clean + dry-run.",
+      "sections": [
+        { "id": "app-shell", "type": "navigation", "components": ["logo-mark", "nav-links"] },
+        { "id": "scan-summary", "type": "summary-strip", "components": ["total-recoverable", "selected-size", "category-tabs"] },
+        { "id": "filters", "type": "filter-bar", "components": ["category-select", "size-filter", "search-input"] },
+        { "id": "results-list", "type": "grouped-list", "components": ["group-header", "list-row x n"] },
+        { "id": "command-bar", "type": "sticky-actions", "components": ["primary-button quarantine-and-clean", "ghost-button dry-run", "selected-count"] }
+      ]
+    },
+    {
+      "id": "quarantine",
+      "route": "/quarantine",
+      "file": "prototype/pages/quarantine.html",
+      "title": "Quarantine",
+      "description": "List of .pq bundles with manifest preview, age, integrity-status (BLAKE3 verified / pending / failed). Actions: restore, verify, delete-permanently. Inline manifest viewer drawer.",
+      "sections": [
+        { "id": "app-shell", "type": "navigation", "components": ["logo-mark", "nav-links"] },
+        { "id": "quarantine-header", "type": "header", "components": ["h1-display", "total-bundles", "total-size"] },
+        { "id": "bundle-list", "type": "list", "components": ["bundle-row x n"] },
+        { "id": "manifest-drawer", "type": "side-panel", "components": ["bundle-meta", "file-tree", "blake3-status", "restore-button", "delete-button"] }
+      ]
+    },
+    {
+      "id": "format-prep-wizard",
+      "route": "/format-prep",
+      "file": "prototype/pages/format-prep-wizard.html",
+      "title": "Format Prep",
+      "description": "7-step wizard. Pro feature (v1.2) but designed in v1 to lock visual language. Steps: 1) snapshot disks, 2) backup .pq, 3) verify integrity, 4) generate restore plan, 5) review, 6) run, 7) post-format restore.",
+      "sections": [
+        { "id": "app-shell", "type": "navigation", "components": ["logo-mark", "nav-links"] },
+        { "id": "wizard-progress", "type": "progress", "components": ["step-indicator x 7"] },
+        { "id": "wizard-step-body", "type": "form", "components": ["step-title", "step-explainer", "step-inputs", "warning-callout"] },
+        { "id": "wizard-nav", "type": "footer", "components": ["secondary-button back", "primary-button next", "ghost-button save-draft"] }
+      ]
+    },
+    {
+      "id": "settings",
+      "route": "/settings",
+      "file": "prototype/pages/settings.html",
+      "title": "Settings",
+      "description": "Profiles, scheduling, telemetry (off by default, opt-in toggle), exclusions, signing/certificate info, advanced (engine logs, manifest path).",
+      "sections": [
+        { "id": "app-shell", "type": "navigation", "components": ["logo-mark", "nav-links"] },
+        { "id": "settings-sidebar", "type": "sidebar", "components": ["section-link x 6"] },
+        { "id": "settings-body", "type": "form", "components": ["form-group x n", "toggle x n", "select x n"] },
+        { "id": "trust-panel", "type": "info-panel", "components": ["cert-info", "binary-hash", "license-mit-link", "telemetry-status"] }
+      ]
+    },
+    {
+      "id": "onboarding",
+      "route": "/onboarding",
+      "file": "prototype/pages/onboarding.html",
+      "title": "Welcome to Polish",
+      "description": "First-run experience. Steps: SmartScreen trust narrative, signature verification, opt-in crash reports (default off), pick initial profile, first scan invitation.",
+      "sections": [
+        { "id": "onboarding-shell", "type": "minimal", "components": ["logo-mark-large"] },
+        { "id": "step-content", "type": "hero", "components": ["step-title-display", "step-body", "step-image"] },
+        { "id": "step-actions", "type": "footer", "components": ["primary-button continue", "ghost-button skip"] }
+      ]
+    }
+  ],
+  "components_planned": [
+    { "id": "app-shell", "variants": ["default", "scrolled"], "props": ["nav-links", "active-route", "version"] },
+    { "id": "logo-mark", "variants": ["default", "compact", "large"], "props": ["wordmark", "size"] },
+    { "id": "badge", "variants": ["success", "warn", "error", "neutral"], "props": ["dot", "text"] },
+    { "id": "button", "variants": ["primary", "secondary", "ghost", "destructive", "disabled"], "props": ["label", "icon", "kbd", "loading"] },
+    { "id": "kbd", "variants": ["default", "on-primary"], "props": ["keys"] },
+    { "id": "input", "variants": ["default", "focus", "error", "disabled", "with-icon"], "props": ["label", "placeholder", "value", "type", "leading-icon"] },
+    { "id": "select", "variants": ["default", "focus", "disabled"], "props": ["label", "options", "value"] },
+    { "id": "toggle", "variants": ["default", "checked", "disabled"], "props": ["label", "description", "checked"] },
+    { "id": "checkbox", "variants": ["default", "checked", "indeterminate", "disabled"], "props": ["checked"] },
+    { "id": "chip", "variants": ["safe", "review", "blocked", "excluded"], "props": ["label", "dot"] },
+    { "id": "list-row", "variants": ["default", "hover", "selected", "expanded"], "props": ["name", "path", "chip", "size", "checkbox"] },
+    { "id": "stat-card", "variants": ["default", "with-trend", "with-action"], "props": ["label", "value", "unit", "meta"] },
+    { "id": "panel", "variants": ["default", "tight", "raised"], "props": ["title", "body"] },
+    { "id": "wizard-step", "variants": ["active", "complete", "pending", "error"], "props": ["index", "title", "status"] },
+    { "id": "command-bar", "variants": ["default", "sticky"], "props": ["primary", "secondary", "ghost", "selection-meta"] }
+  ],
+  "routes": {
+    "/": "prototype/pages/dashboard.html",
+    "/scan": "prototype/pages/scan-results.html",
+    "/quarantine": "prototype/pages/quarantine.html",
+    "/format-prep": "prototype/pages/format-prep-wizard.html",
+    "/settings": "prototype/pages/settings.html",
+    "/onboarding": "prototype/pages/onboarding.html"
+  },
+  "assets": {
+    "icons": {
+      "library": "lucide",
+      "style": ["stroke"],
+      "sizes": ["14px", "16px", "20px"]
+    },
+    "fonts": {
+      "display": "Instrument Serif",
+      "sans": "Geist",
+      "mono": "Geist Mono",
+      "fallback": "system-ui, -apple-system, sans-serif",
+      "delivery": "Google Fonts <link> in production; self-host post-launch"
+    },
+    "images": {
+      "logo": "TBD — wordmark + standalone mark",
+      "favicon": "TBD",
+      "onboarding-illustrations": "TBD — 4-step custom illustrations, calm-modern palette"
+    }
+  },
+  "responsive": {
+    "primary-viewport": "1024-1440 desktop window",
+    "min-window": "880px",
+    "notes": "Tauri desktop app — no true mobile. Window-resize to 880px should still be usable; sidebar collapses to icons below 1024px."
+  },
+  "accessibility": {
+    "target": "WCAG AA",
+    "features": [
+      "focus-indicators-brand-tinted",
+      "aria-labels-on-icons",
+      "semantic-html",
+      "keyboard-navigation",
+      "color-contrast-4.5",
+      "prefers-reduced-motion",
+      "status-uses-color-plus-text-plus-dot",
+      "skip-navigation"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+[package]
+name = "wc-cli"
+description = "Polish — CLI (`polish`). Ships in v1.2 Pro tier."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "polish"
+path = "src/main.rs"
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+wc-app = { path = "../wc-app" }
+wc-adapters = { path = "../wc-adapters" }
+anyhow = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

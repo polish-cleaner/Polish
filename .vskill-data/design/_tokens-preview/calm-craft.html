@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Polish — Variant 2: calm-craft</title>
+<style>
+  :root{
+    --brand-primary:#2D5F4A; --brand-secondary:#1F4634; --brand-tint:#E9F0EC;
+    --accent:#B4632D; --accent-tint:#F6E9DC;
+    --surface-base:#F8F5EF; --surface-elevated:#FFFFFF; --surface-overlay:#F1ECE2;
+    --text-primary:#1F1A14; --text-secondary:#6B5B4A; --text-tertiary:#94816C;
+    --border:#E5DDD0; --border-strong:#D4C7B1;
+    --success:#4A7C59; --warning:#C97E27; --error:#8B2A2A;
+    --font-sans:"Geist","Inter",ui-sans-serif,system-ui,sans-serif;
+    --font-display:"Fraunces","Charter",Georgia,serif;
+    --font-mono:"Geist Mono","JetBrains Mono",ui-monospace,monospace;
+    --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:64px;
+    --r-sm:6px; --r-md:12px;
+    --sh-sm:0 1px 2px rgba(60,40,20,.06);
+    --sh-md:0 4px 14px rgba(60,40,20,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-base);color:var(--text-primary);font-family:var(--font-sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .frame{max-width:920px;margin:32px auto;padding:0 var(--s-6)}
+  .badge{display:inline-block;padding:4px 10px;border-radius:9999px;background:var(--accent-tint);color:var(--accent);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font-mono)}
+  h1{font-family:var(--font-display);font-size:44px;font-weight:500;letter-spacing:-.02em;margin:var(--s-5) 0 var(--s-2)}
+  h2{font-family:var(--font-display);font-size:22px;font-weight:500;margin:var(--s-7) 0 var(--s-3);letter-spacing:-.01em}
+  .lead{color:var(--text-secondary);font-size:17px;margin:0 0 var(--s-6);max-width:580px}
+  .panel{background:var(--surface-elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-6);box-shadow:var(--sh-sm)}
+  .stack{display:grid;gap:var(--s-4)}
+  .row{display:flex;gap:var(--s-3);align-items:center;flex-wrap:wrap}
+  .btn{font:inherit;font-weight:500;padding:10px 20px;border-radius:var(--r-sm);border:1px solid transparent;cursor:pointer;letter-spacing:.01em}
+  .btn-primary{background:var(--brand-primary);color:#fff}
+  .btn-primary:hover{background:var(--brand-secondary)}
+  .btn-secondary{background:var(--surface-elevated);color:var(--text-primary);border-color:var(--border-strong)}
+  .btn-ghost{background:transparent;color:var(--brand-primary)}
+  .input{font:inherit;padding:10px 14px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface-elevated);width:100%;color:var(--text-primary)}
+  .input:focus{outline:2px solid var(--brand-primary);outline-offset:-1px;border-color:var(--brand-primary)}
+  .label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:var(--s-1);display:block;font-family:var(--font-mono);letter-spacing:.04em;text-transform:uppercase}
+  .stat{display:flex;flex-direction:column;gap:var(--s-2);padding:var(--s-5);border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-elevated)}
+  .stat-val{font-family:var(--font-display);font-size:28px;font-weight:500;letter-spacing:-.01em}
+  .stat-label{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono)}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3)}
+  .chip{display:inline-flex;align-items:center;gap:var(--s-1);padding:4px 12px;font-size:12px;font-weight:500;border-radius:9999px;font-family:var(--font-mono);letter-spacing:.02em}
+  .chip-success{background:#E1EFE3;color:var(--success)}
+  .chip-warn{background:#F8E9D3;color:#8C5417}
+  .chip-error{background:#F2DCDC;color:var(--error)}
+  .mono{font-family:var(--font-mono);font-size:13px;background:var(--surface-overlay);padding:3px 8px;border-radius:var(--r-sm);color:var(--text-secondary)}
+  .swatch{display:flex;flex-direction:column;gap:var(--s-1);align-items:flex-start}
+  .swatch-box{width:56px;height:56px;border-radius:var(--r-sm);border:1px solid var(--border)}
+  .swatch-label{font-size:11px;color:var(--text-secondary);font-family:var(--font-mono)}
+  .grid-swatch{display:grid;grid-template-columns:repeat(8,auto);gap:var(--s-3)}
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="badge">Variant 2 · calm-craft</span>
+  <h1>Polish, with care.</h1>
+  <p class="lead">A maintenance tool built like fine joinery — quiet, considered, reversible. Polishing as craft, not as theatre.</p>
+
+  <div class="panel stack">
+    <h2 style="margin-top:0">Buttons</h2>
+    <div class="row">
+      <button class="btn btn-primary">Begin scan</button>
+      <button class="btn btn-secondary">Open quarantine</button>
+      <button class="btn btn-ghost">Preferences</button>
+    </div>
+
+    <h2>Form</h2>
+    <div class="stack" style="max-width:380px">
+      <div>
+        <label class="label" for="i1">Target path</label>
+        <input id="i1" class="input" placeholder="C:\Users\dev\repo" />
+      </div>
+      <div>
+        <label class="label" for="i2">Profile</label>
+        <input id="i2" class="input" value="default.polishprofile" />
+      </div>
+    </div>
+
+    <h2>Stats</h2>
+    <div class="grid-4">
+      <div class="stat"><span class="stat-label">Recoverable</span><span class="stat-val">42.7 GB</span></div>
+      <div class="stat"><span class="stat-label">npm cache</span><span class="stat-val">8.1 GB</span></div>
+      <div class="stat"><span class="stat-label">Quarantined</span><span class="stat-val">3 bundles</span></div>
+      <div class="stat"><span class="stat-label">Last scan</span><span class="stat-val">2h ago</span></div>
+    </div>
+
+    <h2>States</h2>
+    <div class="row">
+      <span class="chip chip-success">safe</span>
+      <span class="chip chip-warn">review</span>
+      <span class="chip chip-error">excluded</span>
+      <span class="mono">polish scan --dry-run</span>
+    </div>
+
+    <h2>Palette</h2>
+    <div class="grid-swatch">
+      <div class="swatch"><div class="swatch-box" style="background:#2D5F4A"></div><span class="swatch-label">#2D5F4A</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#1F4634"></div><span class="swatch-label">#1F4634</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#B4632D"></div><span class="swatch-label">#B4632D</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#F8F5EF"></div><span class="swatch-label">#F8F5EF</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#1F1A14"></div><span class="swatch-label">#1F1A14</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#4A7C59"></div><span class="swatch-label">#4A7C59</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#C97E27"></div><span class="swatch-label">#C97E27</span></div>
+      <div class="swatch"><div class="swatch-box" style="background:#8B2A2A"></div><span class="swatch-label">#8B2A2A</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

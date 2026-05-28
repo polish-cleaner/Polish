@@ -1,0 +1,23 @@
+[package]
+name = "wc-svc"
+description = "Polish — Windows Service (LocalSystem). IPC over named pipe to wc-ui."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "wc-svc"
+path = "src/main.rs"
+
+[dependencies]
+wc-core = { path = "../wc-core" }
+wc-app = { path = "../wc-app" }
+wc-adapters = { path = "../wc-adapters" }
+wc-ipc = { path = "../wc-ipc" }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"
