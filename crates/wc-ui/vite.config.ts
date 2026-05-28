@@ -1,10 +1,11 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 const TAURI_DEBUG = !!process.env.TAURI_DEBUG;
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   clearScreen: false,
   server: {
     port: 1420,

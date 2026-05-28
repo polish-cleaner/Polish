@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useEnvironment } from "../../hooks/useEnvironment";
+import { makeQueryWrapper } from "../test-utils/withQuery";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -27,14 +28,16 @@ beforeEach(() => {
 describe("useEnvironment", () => {
   it("returns null env initially", () => {
     invokeMock.mockResolvedValue(envFixture);
-    const { result } = renderHook(() => useEnvironment());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useEnvironment(), { wrapper: Wrapper });
     expect(result.current.env).toBeNull();
     expect(result.current.error).toBeNull();
   });
 
   it("populates env after detect_env resolves", async () => {
     invokeMock.mockResolvedValue(envFixture);
-    const { result } = renderHook(() => useEnvironment());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useEnvironment(), { wrapper: Wrapper });
     await waitFor(() => {
       expect(result.current.env).not.toBeNull();
     });
@@ -45,7 +48,8 @@ describe("useEnvironment", () => {
 
   it("captures error if detect_env rejects", async () => {
     invokeMock.mockRejectedValue(new Error("detect failed"));
-    const { result } = renderHook(() => useEnvironment());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useEnvironment(), { wrapper: Wrapper });
     await waitFor(() => {
       expect(result.current.error).not.toBeNull();
     });

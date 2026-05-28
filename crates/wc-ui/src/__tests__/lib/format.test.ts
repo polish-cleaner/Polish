@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { formatMiB, groupByCategory, totalBytes } from "../../lib/format";
+import {
+  bytesToGiB,
+  formatMiB,
+  groupByCategory,
+  smartBytes,
+  totalBytes,
+} from "../../lib/format";
 import type { Finding } from "../../types/finding";
 
 describe("formatMiB", () => {
@@ -60,5 +66,31 @@ describe("groupByCategory", () => {
     ];
     const ids = groupByCategory(findings).map((g) => g.id);
     expect(ids).toEqual(["large", "medium", "small"]);
+  });
+});
+
+describe("smartBytes", () => {
+  it("returns B for small values", () => {
+    expect(smartBytes(0)).toEqual({ num: "0", unit: "B" });
+    expect(smartBytes(800)).toEqual({ num: "800", unit: "B" });
+  });
+  it("returns KB / MB / GB / TB units", () => {
+    expect(smartBytes(2048).unit).toBe("KB");
+    expect(smartBytes(5 * 1024 * 1024).unit).toBe("MB");
+    expect(smartBytes(3 * 1024 ** 3).unit).toBe("GB");
+    expect(smartBytes(2 * 1024 ** 4).unit).toBe("TB");
+  });
+  it("respects fractionDigits", () => {
+    expect(smartBytes(1.5 * 1024 ** 3, 2)).toEqual({ num: "1.50", unit: "GB" });
+  });
+});
+
+describe("bytesToGiB", () => {
+  it("returns 0 for 0", () => {
+    expect(bytesToGiB(0)).toBe(0);
+  });
+  it("rounds to fractionDigits precision", () => {
+    expect(bytesToGiB(1.25 * 1024 ** 3, 2)).toBe(1.25);
+    expect(bytesToGiB(1.25 * 1024 ** 3, 0)).toBe(1);
   });
 });

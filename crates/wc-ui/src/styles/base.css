@@ -1,0 +1,42 @@
+/* ============================================================
+   RESET — verbatim from Polish.html
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: var(--font-body);
+  font-feature-settings: 'cv11', 'ss01';
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
+.display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; line-height: 1.05; }
+.display-italic { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.005em; line-height: 1.1; }
+.mono { font-family: var(--font-mono); font-feature-settings: 'tnum' 1, 'zero' 1; }
+.label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); }
+.micro { font-size: 11px; color: var(--ink-muted); }
+
+/* ============================================================
+   APP LAYOUT
+   ============================================================ */
+#root { height: 100vh; display: flex; }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }

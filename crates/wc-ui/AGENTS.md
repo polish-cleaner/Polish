@@ -17,12 +17,12 @@ crates/wc-ui/src/
 │   └── <domain>.ts
 ├── App.tsx              root component — composes pages, owns top-level state
 ├── main.tsx             ReactDOM entry — do not put logic here
-├── styles.css           global styles only (resets, tokens, typography)
+├── styles/              global styles (split into tokens.css + base.css + index.css)
 ├── test-setup.ts        Vitest global setup (matchers, no logic)
 └── vite-env.d.ts
 ```
 
-Per-component CSS goes inline (CSS Modules) or in a colocated `<Component>.module.css` file. Do NOT add new global rules to `styles.css` for component-scoped styling.
+Per-component styling is handled by Tailwind v4 utility classes (Rule 8). CSS Modules (`<Component>.module.css`) are allowed for one-off layouts the utility surface cannot express. Do NOT add new global rules to `styles/base.css` or `styles/tokens.css` for component-scoped styling.
 
 ## Rule 1 — tests in `__tests__/`
 
@@ -193,6 +193,36 @@ Components and pages import the typed wrapper. They never call `invoke` directly
 - Cross-component state → custom hook + React context (defer Redux/Zustand/Jotai to v1.1).
 - Server / IPC state → fetch in a hook at the page/App level, pass down via props. Components do NOT fetch.
 
+## Rule 7 — Animation discipline (VVI per user 2026-05-28)
+
+Polish is editorial software: every motion is deliberate, every state transition is choreographed. There are no instant pop-ins. There is no jank.
+
+- **Page transitions:** `<AnimatePresence>` + `<motion.div variants={fadeUp}>` (240 ms ease-out).
+- **Modals / drawers / toasts:** Framer Motion variants only — never instant. Use `scaleIn` for modals, `slideFromRight` for drawers, `toastSlide` for the toast stack.
+- **List reorder / add / remove:** put the `layout` prop on each item so Framer FLIPs the position delta.
+- **Numeric values that change** (recoverable bytes, file counts, progress percentages): animate via `useMotionValue` + `useTransform` count-up — never snap.
+- **Hover / press micro-interactions:** Tailwind transition utilities driven by `--t-base` + `--ease-out` tokens. No jarring colour jumps; cross-fade backgrounds.
+- **Skeleton loaders during async:** shimmer animation (Framer-driven gradient sweep, not CSS keyframe).
+- **Scan progress:** smooth `motion.div` width animation, not a stepping bar.
+- **Loading spinners:** Framer Motion continuous rotate (`animate={{ rotate: 360 }}`), not CSS keyframes.
+- **`prefers-reduced-motion`:** when true, drop animation duration to `DURATION_FAST` (120 ms) or swap variants entirely. Use the `usePrefersReducedMotion` hook to conditionally select variants. This is **NOT optional** — every variant consumer must honour it.
+- **All variants live in `src/lib/motion.ts`.** NEVER inline variants in a component. NEVER hand-roll a new ease/duration without first adding it to `lib/motion.ts`. Import from there.
+
+## Rule 8 — Locked stack (PLAN.md §5)
+
+The PLAN.md §5 tech-stack table is authoritative. Do not extend the runtime dependency surface without an explicit rule change here.
+
+- **Styling:** Tailwind v4 utility classes. CSS-first config (`src/styles/index.css` + `@theme inline`). No inline `style={}` except for genuinely dynamic values (animated counts, runtime accent overrides) that no utility can express.
+- **Component scaffolding:** shadcn/ui — copy-paste, components live in `src/components/ui/`, not a runtime dependency.
+- **Accessibility primitives:** Radix UI (Dialog, Tooltip, DropdownMenu, Switch, Checkbox, Tabs, Toast, Progress, Slot) — every modal/menu/disclosure must compose a Radix primitive.
+- **Icons:** Lucide React. NEVER inline SVG except for the wordmark / brand glyphs.
+- **Motion:** Framer Motion for ALL motion (see Rule 7).
+- **State:** Zustand for cross-component state (the v1.1 deferral noted in earlier copies of this doc is hereby lifted). Local state still uses `useState`; server/IPC state uses TanStack Query.
+- **IPC client cache:** TanStack Query for ALL Tauri IPC calls. Wrap the typed wrappers in `src/lib/commands.ts` with `useQuery` / `useMutation` in `src/hooks/use<X>.ts`. No bare `await invoke(...)` in components or pages.
+- **Runtime validation at the IPC boundary:** Zod schemas in `src/lib/schemas/` (lands Phase 2).
+- **Date / time:** `date-fns` (no Moment, no Day.js, no native `Date` formatting in components).
+- **No new UI library** (MUI / Chakra / Mantine / Ant / etc.) without an amendment to this rule signed off by the user.
+
 ## Pre-commit checklist (frontend changes)
 
 1. `npm test` exits 0.
@@ -212,8 +242,8 @@ Components and pages import the typed wrapper. They never call `invoke` directly
 - Do not write logic-bearing helpers inside component files — extract to `lib/` or `hooks/`.
 - Do not introduce `export default` in `lib/`, `hooks/`, `types/`, or `constants/` files.
 - Do not commit `*.tsbuildinfo` (root `.gitignore` already handles this).
-- Do not add UI libraries (MUI, Chakra, shadcn) without explicit user approval — Polish ships pure CSS until v1.1.
-- Do not add state-management libraries (Redux, Zustand, Jotai) before v1.1.
+- Do not add UI libraries outside the Rule 8 locked stack (Tailwind v4 + shadcn/ui + Radix + Lucide + Framer Motion). MUI / Chakra / Ant / Mantine are forbidden.
+- Do not add state-management libraries outside Zustand (locked-stack choice for cross-component state per Rule 8). Redux / Jotai / Recoil are forbidden.
 - Do not silently bypass file-size caps with split-by-arbitrary-line-count "Part1" / "Part2" files — split by concern.
 
 ---

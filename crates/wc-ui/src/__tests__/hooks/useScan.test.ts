@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useScan } from "../../hooks/useScan";
+import { makeQueryWrapper } from "../test-utils/withQuery";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -20,7 +21,8 @@ beforeEach(() => {
 
 describe("useScan", () => {
   it("returns null findings and not-scanning initially", () => {
-    const { result } = renderHook(() => useScan());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useScan(), { wrapper: Wrapper });
     expect(result.current.findings).toBeNull();
     expect(result.current.scanning).toBe(false);
     expect(result.current.error).toBeNull();
@@ -28,11 +30,14 @@ describe("useScan", () => {
 
   it("populates findings after runScan resolves", async () => {
     invokeMock.mockResolvedValue(findingsFixture);
-    const { result } = renderHook(() => useScan());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useScan(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.runScan();
     });
-    expect(result.current.findings).toEqual(findingsFixture);
+    await waitFor(() => {
+      expect(result.current.findings).toEqual(findingsFixture);
+    });
     expect(result.current.scanning).toBe(false);
     expect(result.current.error).toBeNull();
   });
@@ -45,7 +50,8 @@ describe("useScan", () => {
           resolveScan = resolve;
         }),
     );
-    const { result } = renderHook(() => useScan());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useScan(), { wrapper: Wrapper });
     let scanPromise: Promise<void>;
     act(() => {
       scanPromise = result.current.runScan();
@@ -57,14 +63,20 @@ describe("useScan", () => {
       resolveScan(findingsFixture);
       await scanPromise;
     });
-    expect(result.current.scanning).toBe(false);
+    await waitFor(() => {
+      expect(result.current.scanning).toBe(false);
+    });
   });
 
   it("captures error if scan rejects", async () => {
     invokeMock.mockRejectedValue(new Error("scan failed"));
-    const { result } = renderHook(() => useScan());
+    const { Wrapper } = makeQueryWrapper();
+    const { result } = renderHook(() => useScan(), { wrapper: Wrapper });
     await act(async () => {
       await result.current.runScan();
+    });
+    await waitFor(() => {
+      expect(result.current.error).not.toBeNull();
     });
     expect(result.current.error).toContain("scan failed");
     expect(result.current.findings).toBeNull();

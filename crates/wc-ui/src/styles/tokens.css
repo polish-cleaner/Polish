@@ -1,0 +1,69 @@
+/* ============================================================
+   POLISH — DESIGN TOKENS
+   Verbatim from .vskill-data/Polish-prototype/Polish.html :root
+   ============================================================ */
+:root {
+  /* Surfaces — warm cream paper */
+  --bg:               oklch(0.968 0.011 86);
+  --bg-deep:          oklch(0.945 0.013 86);
+  --surface:          #ffffff;
+  --surface-warm:     oklch(0.985 0.008 86);
+  --surface-sunken:   oklch(0.955 0.012 86);
+
+  /* Ink — slightly cool charcoal */
+  --ink:              oklch(0.205 0.013 250);
+  --ink-soft:         oklch(0.380 0.010 250);
+  --ink-muted:        oklch(0.560 0.008 250);
+  --ink-faint:        oklch(0.720 0.006 250);
+
+  /* Hairlines */
+  --line:             oklch(0.895 0.007 250);
+  --line-strong:      oklch(0.825 0.008 250);
+  --line-soft:        oklch(0.935 0.006 250);
+
+  /* Accent — deep moss (default; swapped at runtime via useAccent) */
+  --accent:           oklch(0.420 0.085 155);
+  --accent-deep:      oklch(0.320 0.072 155);
+  --accent-hover:     oklch(0.380 0.085 155);
+  --accent-soft:      oklch(0.940 0.030 155);
+  --accent-ink:       oklch(0.280 0.060 155);
+
+  /* Status — desaturated, restrained */
+  --status-good:      oklch(0.545 0.110 155);
+  --status-warn:      oklch(0.680 0.130 70);
+  --status-warn-soft: oklch(0.945 0.045 80);
+  --status-danger:    oklch(0.545 0.180 25);
+  --status-danger-soft:oklch(0.955 0.030 25);
+  --status-info:      oklch(0.520 0.080 240);
+
+  /* Type */
+  --font-display:     'Instrument Serif', 'Georgia', serif;
+  --font-body:        'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:        'JetBrains Mono', ui-monospace, monospace;
+
+  /* Density (toggled by tweak) */
+  --density:          1;
+  --space-1:          calc(4px * var(--density));
+  --space-2:          calc(8px * var(--density));
+  --space-3:          calc(12px * var(--density));
+  --space-4:          calc(16px * var(--density));
+  --space-5:          calc(20px * var(--density));
+  --space-6:          calc(24px * var(--density));
+  --space-8:          calc(32px * var(--density));
+  --space-10:         calc(40px * var(--density));
+  --space-12:         calc(48px * var(--density));
+  --space-16:         calc(64px * var(--density));
+
+  /* Radii — restrained */
+  --r-sm:             3px;
+  --r-md:             5px;
+  --r-lg:             8px;
+  --r-pill:           999px;
+
+  /* Motion */
+  --ease-out:         cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast:           120ms;
+  --t-base:           240ms;
+  --t-slow:           400ms;
+}

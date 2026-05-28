@@ -1,0 +1,80 @@
+/* ============================================================
+   POLISH — Stylesheet entry point
+   Order matters: fonts → tokens → base → tailwind → theme map.
+   ============================================================ */
+
+/* Self-hosted fonts (woff2 shipped by @fontsource packages) */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+/* Design-token :root vars + reset/typography utilities */
+@import "./tokens.css";
+@import "./base.css";
+
+/* Tailwind v4 — CSS-first */
+@import "tailwindcss";
+
+/* ============================================================
+   Tailwind theme map — surface Polish design tokens as
+   first-class Tailwind utilities (`bg-bg`, `text-ink`,
+   `border-line`, `text-accent`, `font-display`, `rounded-md`,
+   `ease-out`, etc.).
+   ============================================================ */
+@theme inline {
+  /* Surfaces */
+  --color-bg:               var(--bg);
+  --color-bg-deep:          var(--bg-deep);
+  --color-surface:          var(--surface);
+  --color-surface-warm:     var(--surface-warm);
+  --color-surface-sunken:   var(--surface-sunken);
+
+  /* Ink */
+  --color-ink:              var(--ink);
+  --color-ink-soft:         var(--ink-soft);
+  --color-ink-muted:        var(--ink-muted);
+  --color-ink-faint:        var(--ink-faint);
+
+  /* Lines */
+  --color-line:             var(--line);
+  --color-line-strong:      var(--line-strong);
+  --color-line-soft:        var(--line-soft);
+
+  /* Accent */
+  --color-accent:           var(--accent);
+  --color-accent-deep:      var(--accent-deep);
+  --color-accent-hover:     var(--accent-hover);
+  --color-accent-soft:      var(--accent-soft);
+  --color-accent-ink:       var(--accent-ink);
+
+  /* Status */
+  --color-status-good:        var(--status-good);
+  --color-status-warn:        var(--status-warn);
+  --color-status-warn-soft:   var(--status-warn-soft);
+  --color-status-danger:      var(--status-danger);
+  --color-status-danger-soft: var(--status-danger-soft);
+  --color-status-info:        var(--status-info);
+
+  /* Typography */
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-mono:    var(--font-mono);
+
+  /* Radius */
+  --radius-sm:   var(--r-sm);
+  --radius-md:   var(--r-md);
+  --radius-lg:   var(--r-lg);
+  --radius-pill: var(--r-pill);
+
+  /* Motion */
+  --ease-out:    var(--ease-out);
+  --ease-spring: var(--ease-spring);
+}
