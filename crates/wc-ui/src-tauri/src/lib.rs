@@ -12,11 +12,18 @@ use wc_core::{Environment, Finding};
 
 use serde::Serialize;
 
+/// Async so the long-running filesystem walk (24k+ findings on a real
+/// machine) does NOT block Tauri's main thread. UI stays responsive
+/// during the seconds-to-minutes scan.
 #[tauri::command]
-fn scan() -> Vec<Finding> {
-    wc_adapters::ensure_linked();
-    let env = wc_adapters::detect_environment();
-    scan_disk::run(env)
+async fn scan() -> Result<Vec<Finding>, String> {
+    tokio::task::spawn_blocking(|| {
+        wc_adapters::ensure_linked();
+        let env = wc_adapters::detect_environment();
+        scan_disk::run(env)
+    })
+    .await
+    .map_err(|e| format!("scan task join failed: {e}"))
 }
 
 #[tauri::command]
@@ -55,36 +62,57 @@ impl ExecuteResult {
 /// opened (locked by another process), returns
 /// `needs_user_decision = true` and DOES NOT touch any file — the
 /// UI then prompts the user and re-invokes with `skip_locked = true`.
+///
+/// Async + spawn_blocking so the per-file pre-flight (`File::open` on
+/// 24k+ findings, antivirus-amplified) does NOT block Tauri's main
+/// thread. Without this the UI freezes for the full pack duration.
 #[tauri::command]
-fn execute(findings: Vec<Finding>, skip_locked: bool) -> Result<ExecuteResult, String> {
-    wc_adapters::ensure_linked();
-    let bundle = default_bundle_path()?;
-    let plan = preview_cleanup::run(findings);
-    let port = PqWriterAdapter::new();
-    let outcome =
-        execute_cleanup::run(plan, &port, &bundle, skip_locked).map_err(|e| error_chain(&e))?;
-    let bundle_ref = if outcome.needs_user_decision {
-        None
-    } else {
-        Some(bundle.as_path())
-    };
-    Ok(ExecuteResult::from_outcome(bundle_ref, outcome))
+async fn execute(
+    findings: Vec<Finding>,
+    skip_locked: bool,
+) -> Result<ExecuteResult, String> {
+    tokio::task::spawn_blocking(move || -> Result<ExecuteResult, String> {
+        wc_adapters::ensure_linked();
+        let bundle = default_bundle_path()?;
+        let plan = preview_cleanup::run(findings);
+        let port = PqWriterAdapter::new();
+        let outcome = execute_cleanup::run(plan, &port, &bundle, skip_locked)
+            .map_err(|e| error_chain(&e))?;
+        let bundle_ref = if outcome.needs_user_decision {
+            None
+        } else {
+            Some(bundle.as_path())
+        };
+        Ok(ExecuteResult::from_outcome(bundle_ref, outcome))
+    })
+    .await
+    .map_err(|e| format!("execute task join failed: {e}"))?
 }
 
 /// Restore a `.pq` bundle's contents to `dest_root`. BLAKE3
-/// verify-on-restore is performed by the port.
+/// verify-on-restore is performed by the port. Async for the same
+/// reason as `execute` — large bundles read every byte.
 #[tauri::command]
-fn restore(bundle: PathBuf, dest_root: PathBuf) -> Result<(), String> {
-    std::fs::create_dir_all(&dest_root).map_err(|e| e.to_string())?;
-    let port = PqWriterAdapter::new();
-    restore_quarantine::run(&port, &bundle, &dest_root).map_err(|e| error_chain(&e))
+async fn restore(bundle: PathBuf, dest_root: PathBuf) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        std::fs::create_dir_all(&dest_root).map_err(|e| e.to_string())?;
+        let port = PqWriterAdapter::new();
+        restore_quarantine::run(&port, &bundle, &dest_root).map_err(|e| error_chain(&e))
+    })
+    .await
+    .map_err(|e| format!("restore task join failed: {e}"))?
 }
 
-/// Integrity check a `.pq` bundle without unpacking.
+/// Integrity check a `.pq` bundle without unpacking. Async — same
+/// reasoning as the other heavy commands.
 #[tauri::command]
-fn verify(bundle: PathBuf) -> Result<(), String> {
-    let port = PqWriterAdapter::new();
-    port.verify(&bundle).map_err(|e| error_chain(&e))
+async fn verify(bundle: PathBuf) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        let port = PqWriterAdapter::new();
+        port.verify(&bundle).map_err(|e| error_chain(&e))
+    })
+    .await
+    .map_err(|e| format!("verify task join failed: {e}"))?
 }
 
 /// Format an error and its full `source()` chain as a single string

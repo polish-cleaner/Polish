@@ -4611,6 +4611,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
+ "tokio",
  "wc-adapters",
  "wc-app",
  "wc-core",
