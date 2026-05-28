@@ -50,19 +50,42 @@ describe("detectEnv", () => {
 });
 
 describe("execute", () => {
-  it("calls invoke('execute', { findings }) and returns bundle path", async () => {
-    invokeMock.mockResolvedValue("C:\\Temp\\polish-cleanup-123.pq");
+  it("calls invoke('execute', { findings, skipLocked }) and returns the outcome", async () => {
+    const outcome = {
+      bundle_path: "C:\\Temp\\polish-cleanup-123.pq",
+      packed_count: 1,
+      locked_files: [],
+      needs_user_decision: false,
+    };
+    invokeMock.mockResolvedValue(outcome);
     const findings = [
       { path: "a", size: 100, category_id: "dev.npm.cache" },
     ];
-    const path = await execute(findings);
-    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("execute", { findings });
-    expect(path).toBe("C:\\Temp\\polish-cleanup-123.pq");
+    const result = await execute(findings, false);
+    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("execute", {
+      findings,
+      skipLocked: false,
+    });
+    expect(result).toEqual(outcome);
+  });
+
+  it("forwards skipLocked=true on retry", async () => {
+    invokeMock.mockResolvedValue({
+      bundle_path: "ok.pq",
+      packed_count: 0,
+      locked_files: [],
+      needs_user_decision: false,
+    });
+    await execute([], true);
+    expect(invokeMock).toHaveBeenCalledExactlyOnceWith("execute", {
+      findings: [],
+      skipLocked: true,
+    });
   });
 
   it("propagates errors as rejected promises", async () => {
     invokeMock.mockRejectedValue(new Error("disk full"));
-    await expect(execute([])).rejects.toThrow("disk full");
+    await expect(execute([], false)).rejects.toThrow("disk full");
   });
 });
 

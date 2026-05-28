@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConfirmModal from "./components/ConfirmModal";
+import LockedFilesModal from "./components/LockedFilesModal";
 import { formatMiB, groupByCategory, totalBytes } from "./lib/format";
 import { useEnvironment } from "./hooks/useEnvironment";
 import { useScan } from "./hooks/useScan";
@@ -8,11 +9,20 @@ import { useExecute } from "./hooks/useExecute";
 export default function App() {
   const { env, error: envError } = useEnvironment();
   const { findings, scanning, error: scanError, runScan } = useScan();
-  const { executing, bundlePath, error: executeError, runExecute } = useExecute();
+  const {
+    executing,
+    result: executeResult,
+    error: executeError,
+    runExecute,
+    reset: resetExecute,
+  } = useExecute();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const error = envError ?? scanError ?? executeError;
   const groups = findings ? groupByCategory(findings) : [];
   const total = findings ? totalBytes(findings) : 0;
+  const lockedDecisionPending = executeResult?.needs_user_decision === true;
+  const successResult =
+    executeResult && !executeResult.needs_user_decision ? executeResult : null;
 
   return (
     <main className="app">
@@ -55,10 +65,21 @@ export default function App() {
           )}
         </div>
         {error && <p className="error">Error: {error}</p>}
-        {bundlePath && (
+        {successResult && successResult.bundle_path && (
           <p className="status success">
-            Quarantined to <code>{bundlePath}</code>. Restore via{" "}
-            <code>polish restore --bundle "{bundlePath}" --dest &lt;dir&gt;</code>.
+            Quarantined <strong>{successResult.packed_count.toLocaleString()}</strong>{" "}
+            file{successResult.packed_count === 1 ? "" : "s"} to{" "}
+            <code>{successResult.bundle_path}</code>.{" "}
+            {successResult.locked_files.length > 0 && (
+              <>
+                Skipped <strong>{successResult.locked_files.length.toLocaleString()}</strong>{" "}
+                locked file{successResult.locked_files.length === 1 ? "" : "s"}.{" "}
+              </>
+            )}
+            Restore via{" "}
+            <code>
+              polish restore --bundle "{successResult.bundle_path}" --dest &lt;dir&gt;
+            </code>.
           </p>
         )}
         {findings && (
@@ -104,7 +125,17 @@ export default function App() {
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false);
-          if (findings) runExecute(findings);
+          if (findings) runExecute(findings, false);
+        }}
+      />
+
+      <LockedFilesModal
+        open={lockedDecisionPending}
+        lockedFiles={executeResult?.locked_files ?? []}
+        totalFindings={findings?.length ?? 0}
+        onCancel={resetExecute}
+        onSkip={() => {
+          if (findings) runExecute(findings, true);
         }}
       />
     </main>

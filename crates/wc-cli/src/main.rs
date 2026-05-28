@@ -39,6 +39,12 @@ enum Cmd {
         /// Required confirmation flag; without it execute refuses.
         #[arg(long)]
         yes: bool,
+        /// Skip files we can't open (locked by another process or
+        /// permission-denied). Without this flag, execute aborts when
+        /// any finding is locked and prints the list so you can close
+        /// the locking app and retry.
+        #[arg(long)]
+        skip_locked: bool,
     },
     /// Restore a `.pq` bundle to a destination directory.
     Restore {
@@ -61,7 +67,11 @@ fn main() -> Result<()> {
     match cli.command {
         Cmd::Scan => cmd_scan(),
         Cmd::Preview => cmd_preview(),
-        Cmd::Execute { bundle, yes } => cmd_execute(bundle, yes),
+        Cmd::Execute {
+            bundle,
+            yes,
+            skip_locked,
+        } => cmd_execute(bundle, yes, skip_locked),
         Cmd::Restore { bundle, dest } => cmd_restore(bundle, dest),
         Cmd::Verify { bundle } => cmd_verify(bundle),
     }
@@ -89,7 +99,7 @@ fn cmd_preview() -> Result<()> {
     Ok(())
 }
 
-fn cmd_execute(bundle: PathBuf, yes: bool) -> Result<()> {
+fn cmd_execute(bundle: PathBuf, yes: bool, skip_locked: bool) -> Result<()> {
     if !yes {
         anyhow::bail!(
             "refusing to execute: pass `--yes` to confirm. This packs findings into {} and deletes originals.",
@@ -111,11 +121,32 @@ fn cmd_execute(bundle: PathBuf, yes: bool) -> Result<()> {
     );
     let plan = preview_cleanup::run(findings);
     let port = PqWriterAdapter::new();
-    let _executed = execute_cleanup::run(plan, &port, &bundle)
+    let outcome = execute_cleanup::run(plan, &port, &bundle, skip_locked)
         .with_context(|| format!("execute failed (bundle: {})", bundle.display()))?;
-    println!("Done. Bundle written. Originals deleted.");
+
+    if outcome.needs_user_decision {
+        eprintln!(
+            "Aborted: {} file(s) are locked (open by another process). \
+             Close the locking app and retry, or pass --skip-locked.",
+            outcome.locked_files.len()
+        );
+        for p in outcome.locked_files.iter().take(20) {
+            eprintln!("  locked: {}", p.display());
+        }
+        if outcome.locked_files.len() > 20 {
+            eprintln!("  ... and {} more", outcome.locked_files.len() - 20);
+        }
+        std::process::exit(2);
+    }
+
     println!(
-        "To restore: polish restore --bundle {} --dest <dir>",
+        "Done. {} files quarantined; {} skipped (locked).",
+        outcome.packed_count,
+        outcome.locked_files.len()
+    );
+    println!(
+        "Bundle: {}\nTo restore: polish restore --bundle {} --dest <dir>",
+        bundle.display(),
         bundle.display()
     );
     Ok(())

@@ -4543,6 +4543,8 @@ name = "wc-app"
 version = "0.1.0"
 dependencies = [
  "mockall",
+ "serde",
+ "tempfile",
  "thiserror 1.0.69",
  "wc-core",
 ]

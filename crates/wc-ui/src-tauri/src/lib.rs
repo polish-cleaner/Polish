@@ -1,13 +1,16 @@
 //! Tauri shell entrypoint. Exposes engine use cases as `tauri::command`s
 //! consumable from the React frontend via `invoke('<name>')`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use wc_adapters::pq_writer::PqWriterAdapter;
+use wc_app::usecase::execute_cleanup::ExecuteOutcome;
 use wc_app::usecase::{execute_cleanup, preview_cleanup, restore_quarantine, scan_disk};
 use wc_core::ports::pq_port::PqPort;
 use wc_core::{Environment, Finding};
+
+use serde::Serialize;
 
 #[tauri::command]
 fn scan() -> Vec<Finding> {
@@ -21,17 +24,51 @@ fn detect_env() -> Environment {
     wc_adapters::detect_environment()
 }
 
+/// Outcome of a quarantine attempt as seen by the UI. Mirrors
+/// [`ExecuteOutcome`] but carries paths as strings (so JSON
+/// serialization stays platform-neutral) and the bundle path.
+#[derive(Debug, Serialize)]
+struct ExecuteResult {
+    bundle_path: Option<String>,
+    packed_count: usize,
+    locked_files: Vec<String>,
+    needs_user_decision: bool,
+}
+
+impl ExecuteResult {
+    fn from_outcome(bundle: Option<&Path>, outcome: ExecuteOutcome) -> Self {
+        Self {
+            bundle_path: bundle.map(|p| p.to_string_lossy().into_owned()),
+            packed_count: outcome.packed_count,
+            locked_files: outcome
+                .locked_files
+                .into_iter()
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect(),
+            needs_user_decision: outcome.needs_user_decision,
+        }
+    }
+}
+
 /// Pack `findings` into a `.pq` quarantine bundle then delete the
-/// originals. Returns the absolute bundle path on success so the UI
-/// can show "Saved to: …" and offer a `restore` command from the CLI.
+/// originals. If `skip_locked` is false and any finding can't be
+/// opened (locked by another process), returns
+/// `needs_user_decision = true` and DOES NOT touch any file — the
+/// UI then prompts the user and re-invokes with `skip_locked = true`.
 #[tauri::command]
-fn execute(findings: Vec<Finding>) -> Result<String, String> {
+fn execute(findings: Vec<Finding>, skip_locked: bool) -> Result<ExecuteResult, String> {
     wc_adapters::ensure_linked();
     let bundle = default_bundle_path()?;
     let plan = preview_cleanup::run(findings);
     let port = PqWriterAdapter::new();
-    execute_cleanup::run(plan, &port, &bundle).map_err(|e| error_chain(&e))?;
-    Ok(bundle.to_string_lossy().into_owned())
+    let outcome =
+        execute_cleanup::run(plan, &port, &bundle, skip_locked).map_err(|e| error_chain(&e))?;
+    let bundle_ref = if outcome.needs_user_decision {
+        None
+    } else {
+        Some(bundle.as_path())
+    };
+    Ok(ExecuteResult::from_outcome(bundle_ref, outcome))
 }
 
 /// Restore a `.pq` bundle's contents to `dest_root`. BLAKE3

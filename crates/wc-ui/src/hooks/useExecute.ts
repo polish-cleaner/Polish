@@ -1,25 +1,30 @@
 import { useState } from "react";
 import type { Finding } from "../types/finding";
+import type { ExecuteResult } from "../types/execute-result";
 import { execute } from "../lib/commands";
 
 export interface UseExecuteResult {
   executing: boolean;
-  bundlePath: string | null;
+  result: ExecuteResult | null;
   error: string | null;
-  runExecute: (findings: Finding[]) => Promise<void>;
+  runExecute: (findings: Finding[], skipLocked: boolean) => Promise<void>;
+  reset: () => void;
 }
 
 export function useExecute(): UseExecuteResult {
   const [executing, setExecuting] = useState(false);
-  const [bundlePath, setBundlePath] = useState<string | null>(null);
+  const [result, setResult] = useState<ExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function runExecute(findings: Finding[]): Promise<void> {
+  async function runExecute(
+    findings: Finding[],
+    skipLocked: boolean,
+  ): Promise<void> {
     setExecuting(true);
     setError(null);
     try {
-      const path = await execute(findings);
-      setBundlePath(path);
+      const r = await execute(findings, skipLocked);
+      setResult(r);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -27,5 +32,10 @@ export function useExecute(): UseExecuteResult {
     }
   }
 
-  return { executing, bundlePath, error, runExecute };
+  function reset(): void {
+    setResult(null);
+    setError(null);
+  }
+
+  return { executing, result, error, runExecute, reset };
 }
