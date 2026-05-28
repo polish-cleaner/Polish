@@ -41,6 +41,7 @@ use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
+use rayon::prelude::*;
 use tar::{Archive, Builder, Header};
 use time::format_description::well_known::Iso8601;
 use time::OffsetDateTime;
@@ -79,24 +80,32 @@ impl PqPort for PqWriterAdapter {
         // Trait surface doesn't carry per-file category info, so today
         // everything lands in DEFAULT_CATEGORY. Sub-archive layout is
         // still segmented to keep the format forward-compatible.
-        let mut manifest_items: Vec<ManifestItem> = Vec::with_capacity(items.len());
-        let mut by_cat: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
+        //
+        // BLAKE3 hashing is CPU-bound and runs across all available
+        // cores via rayon — on a 24k-file Chrome cache pack this is the
+        // difference between minutes (sequential) and seconds.
+        let manifest_items: Vec<ManifestItem> = items
+            .par_iter()
+            .map(|src| -> Result<ManifestItem, PqError> {
+                let meta = fs::metadata(src).map_err(|e| io_with_path(src, e))?;
+                if !meta.is_file() {
+                    return Err(PqError::Io(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!("not a regular file: {}", src.display()),
+                    )));
+                }
+                let digest = hash::blake3_file(src).map_err(|e| io_with_path(src, e))?;
+                Ok(ManifestItem {
+                    original_path: src.to_string_lossy().into_owned(),
+                    size: meta.len(),
+                    blake3: digest,
+                    category_id: DEFAULT_CATEGORY.to_string(),
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
+        let mut by_cat: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
         for src in &items {
-            let meta = fs::metadata(src).map_err(|e| io_with_path(src, e))?;
-            if !meta.is_file() {
-                return Err(PqError::Io(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("not a regular file: {}", src.display()),
-                )));
-            }
-            let digest = hash::blake3_file(src).map_err(|e| io_with_path(src, e))?;
-            manifest_items.push(ManifestItem {
-                original_path: src.to_string_lossy().into_owned(),
-                size: meta.len(),
-                blake3: digest,
-                category_id: DEFAULT_CATEGORY.to_string(),
-            });
             by_cat
                 .entry(DEFAULT_CATEGORY.to_string())
                 .or_default()

@@ -14,6 +14,8 @@
 
 use std::path::{Path, PathBuf};
 
+use rayon::iter::Either;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use wc_core::pipeline::Previewed;
 use wc_core::ports::pq_port::{PqError, PqPort};
@@ -84,17 +86,21 @@ pub fn run<P: PqPort>(
 /// sharing-violation code (raw os error 32). Any other open error
 /// (e.g., `NotFound`) lands in `readable` so the downstream pack
 /// surfaces it as a normal Pack error with full path context.
+///
+/// Parallelized with rayon because Windows Defender amplifies each
+/// `File::open` by 10–100 ms on cache directories. Sequential over
+/// 24k Chrome cache files = minutes; parallel = seconds.
 fn partition_readable(paths: &[PathBuf]) -> (Vec<PathBuf>, Vec<PathBuf>) {
-    let mut readable = Vec::with_capacity(paths.len());
-    let mut locked = Vec::new();
-    for p in paths {
-        if is_locked(p) {
-            locked.push(p.clone());
-        } else {
-            readable.push(p.clone());
-        }
-    }
-    (readable, locked)
+    paths
+        .par_iter()
+        .map(|p| {
+            if is_locked(p) {
+                Either::Right(p.clone())
+            } else {
+                Either::Left(p.clone())
+            }
+        })
+        .partition_map(|e| e)
 }
 
 fn is_locked(path: &Path) -> bool {

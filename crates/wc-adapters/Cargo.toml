@@ -17,6 +17,7 @@ serde_json = { workspace = true }
 tar = { workspace = true }
 time = { workspace = true }
 zstd = { workspace = true }
+rayon = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

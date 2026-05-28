@@ -33,6 +33,7 @@ walkdir = "2.5"
 tempfile = "3"
 blake3 = "1"
 zstd = "0.13"
+rayon = "1.10"
 
 [profile.release]
 lto = "thin"
