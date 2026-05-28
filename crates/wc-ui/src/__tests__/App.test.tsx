@@ -217,6 +217,114 @@ describe("App", () => {
     expect(screen.getByText(/Skipped/)).toBeInTheDocument();
   });
 
+  it("Skip filters out locked findings before retrying", async () => {
+    // First findings entry is in the locked_files set; Skip should
+    // exclude it from the retry payload (so the backend doesn't
+    // re-pre-flight files it already knows are locked).
+    const lockedPath = findingsFixture[0].path;
+    let secondInvokeArgs:
+      | { findings: typeof findingsFixture; skipLocked: boolean }
+      | undefined;
+    let attempt = 0;
+    invokeMock.mockImplementation(
+      (cmd: string, args?: { findings: typeof findingsFixture; skipLocked: boolean }) => {
+        if (cmd === "detect_env") return Promise.resolve(envFixture);
+        if (cmd === "scan") return Promise.resolve(findingsFixture);
+        if (cmd === "execute") {
+          attempt += 1;
+          if (attempt === 1) {
+            return Promise.resolve({
+              bundle_path: null,
+              packed_count: 0,
+              locked_files: [lockedPath],
+              needs_user_decision: true,
+            });
+          }
+          secondInvokeArgs = args;
+          return Promise.resolve({
+            bundle_path: "C:\\Temp\\ok.pq",
+            packed_count: 2,
+            locked_files: [lockedPath],
+            needs_user_decision: false,
+          });
+        }
+        return Promise.reject(new Error(`unknown command: ${cmd}`));
+      },
+    );
+
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Quarantine all/ }));
+    const confirmDialog = screen.getByRole("dialog");
+    await user.click(within(confirmDialog).getByRole("button", { name: "Quarantine" }));
+
+    await screen.findByRole("heading", { name: /1 file can't be read/ }, { timeout: 5000 });
+    await user.click(screen.getByRole("button", { name: /Skip locked/ }));
+
+    await waitFor(() => {
+      expect(secondInvokeArgs?.skipLocked).toBe(true);
+    });
+    // Retry payload excludes the path that was locked.
+    expect(secondInvokeArgs?.findings.map((f) => f.path)).not.toContain(lockedPath);
+    expect(secondInvokeArgs?.findings).toHaveLength(findingsFixture.length - 1);
+  });
+
+  it("Skip closes the LockedFilesModal immediately (does not wait for the retry to resolve)", async () => {
+    let resolveSecond: (value: unknown) => void = () => {};
+    let attempt = 0;
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "detect_env") return Promise.resolve(envFixture);
+      if (cmd === "scan") return Promise.resolve(findingsFixture);
+      if (cmd === "execute") {
+        attempt += 1;
+        if (attempt === 1) {
+          return Promise.resolve({
+            bundle_path: null,
+            packed_count: 0,
+            locked_files: ["C:\\Chrome\\Cache\\f_001"],
+            needs_user_decision: true,
+          });
+        }
+        // Hang the second invoke so we can observe the modal close
+        // BEFORE the retry resolves.
+        return new Promise((resolve) => {
+          resolveSecond = resolve;
+        });
+      }
+      return Promise.reject(new Error(`unknown: ${cmd}`));
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /^Scan$/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Quarantine all/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Quarantine all/ }));
+    const confirmDialog = screen.getByRole("dialog");
+    await user.click(within(confirmDialog).getByRole("button", { name: "Quarantine" }));
+    await screen.findByRole("heading", { name: /1 file can't be read/ }, { timeout: 5000 });
+
+    await user.click(screen.getByRole("button", { name: /Skip locked/ }));
+
+    // Modal should close before the second invoke resolves.
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    // Unblock the hanging promise so the test cleans up.
+    resolveSecond({
+      bundle_path: "ok.pq",
+      packed_count: 2,
+      locked_files: ["C:\\Chrome\\Cache\\f_001"],
+      needs_user_decision: false,
+    });
+  });
+
   it("LockedFilesModal Cancel resets execute state and does not retry", async () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "detect_env") return Promise.resolve(envFixture);

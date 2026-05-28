@@ -135,7 +135,11 @@ export default function App() {
         totalFindings={findings?.length ?? 0}
         onCancel={resetExecute}
         onSkip={() => {
-          if (findings) runExecute(findings, true);
+          if (!findings || !executeResult) return;
+          const lockedSet = new Set(executeResult.locked_files);
+          const readableOnly = findings.filter((f) => !lockedSet.has(f.path));
+          resetExecute();
+          runExecute(readableOnly, true);
         }}
       />
     </main>
