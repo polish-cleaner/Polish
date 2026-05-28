@@ -3,7 +3,7 @@
 //! Segmented sub-archive + BLAKE3 verify-on-restore per PROJECT.md §9
 //! (`.pq` corruption mitigation row). Concrete impl in `wc-adapters::pq_writer`.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PqError {
@@ -18,7 +18,7 @@ pub enum PqError {
 #[cfg_attr(test, mockall::automock)]
 pub trait PqPort: Send + Sync {
     /// Pack `items` into a `.pq` bundle at `out`.
-    fn pack(&self, items: &[&Path], out: &Path) -> Result<(), PqError>;
+    fn pack(&self, items: Vec<PathBuf>, out: &Path) -> Result<(), PqError>;
     /// Unpack `bundle` under `dest_root`, restoring original layout.
     fn unpack(&self, bundle: &Path, dest_root: &Path) -> Result<(), PqError>;
     /// Verify bundle integrity without unpacking.

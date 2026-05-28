@@ -10,8 +10,16 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn has_npm(&self) -> bool { self.has_npm }
-    pub fn has_pnpm(&self) -> bool { self.has_pnpm }
-    pub fn has_cargo(&self) -> bool { self.has_cargo }
-    pub fn has_wsl(&self) -> bool { self.has_wsl }
+    pub fn has_npm(&self) -> bool {
+        self.has_npm
+    }
+    pub fn has_pnpm(&self) -> bool {
+        self.has_pnpm
+    }
+    pub fn has_cargo(&self) -> bool {
+        self.has_cargo
+    }
+    pub fn has_wsl(&self) -> bool {
+        self.has_wsl
+    }
 }

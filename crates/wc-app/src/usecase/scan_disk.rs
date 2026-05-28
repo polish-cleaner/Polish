@@ -3,7 +3,7 @@
 use wc_core::{registered_categories, Environment, Finding, ScanContext};
 
 pub fn run(env: Environment) -> Vec<Finding> {
-    let ctx = ScanContext { environment: env.clone() };
+    let ctx = ScanContext::new(env.clone());
     let mut all = Vec::new();
     for cat in registered_categories() {
         if cat.supports(&env) {

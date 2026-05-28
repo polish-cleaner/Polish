@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 license = "MIT"
 authors = ["Polish contributors"]
 repository = "https://github.com/TBD/polish"
@@ -27,6 +27,8 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 mockall = "0.12"
 inventory = "0.3"
+walkdir = "2.5"
+tempfile = "3"
 blake3 = "1"
 
 [profile.release]

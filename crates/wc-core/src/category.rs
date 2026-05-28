@@ -40,6 +40,12 @@ pub struct ScanContext {
     pub environment: Environment,
 }
 
+impl ScanContext {
+    pub fn new(environment: Environment) -> Self {
+        Self { environment }
+    }
+}
+
 /// A cleanup category. Implemented in `wc-adapters/src/categories/<id>.rs`.
 pub trait Category: Send + Sync + 'static {
     fn id(&self) -> CategoryId;
