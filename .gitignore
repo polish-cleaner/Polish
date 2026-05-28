@@ -11,6 +11,9 @@ build/
 *.tsbuildinfo
 crates/wc-ui/src-tauri/target/
 crates/wc-ui/src-tauri/gen/
+# stray tsc emissions from running `tsc -b` without `--noEmit` against vite.config.ts
+crates/wc-ui/vite.config.d.ts
+crates/wc-ui/vite.config.js
 
 # Editor / OS
 .DS_Store
