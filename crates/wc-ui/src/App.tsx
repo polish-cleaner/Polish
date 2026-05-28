@@ -1,39 +1,8 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-
-interface Finding {
-  path: string;
-  size: number;
-  category_id: string;
-}
-
-interface Environment {
-  has_npm: boolean;
-  has_pnpm: boolean;
-  has_cargo: boolean;
-  has_wsl: boolean;
-  has_chrome: boolean;
-  has_edge: boolean;
-  has_firefox: boolean;
-  windows_build: number | null;
-}
-
-function formatMiB(bytes: number): string {
-  return (bytes / 1_048_576).toFixed(2) + " MiB";
-}
-
-function groupByCategory(findings: Finding[]): { id: string; count: number; size: number }[] {
-  const groups = new Map<string, { count: number; size: number }>();
-  for (const f of findings) {
-    const g = groups.get(f.category_id) ?? { count: 0, size: 0 };
-    g.count += 1;
-    g.size += f.size;
-    groups.set(f.category_id, g);
-  }
-  return Array.from(groups.entries())
-    .map(([id, v]) => ({ id, ...v }))
-    .sort((a, b) => b.size - a.size);
-}
+import type { Finding } from "./types/finding";
+import type { Environment } from "./types/environment";
+import { formatMiB, groupByCategory, totalBytes } from "./lib/format";
+import { scan, detectEnv } from "./lib/commands";
 
 export default function App() {
   const [env, setEnv] = useState<Environment | null>(null);
@@ -42,7 +11,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    invoke<Environment>("detect_env")
+    detectEnv()
       .then(setEnv)
       .catch((e) => setError(String(e)));
   }, []);
@@ -51,7 +20,7 @@ export default function App() {
     setScanning(true);
     setError(null);
     try {
-      const result = await invoke<Finding[]>("scan");
+      const result = await scan();
       setFindings(result);
     } catch (e) {
       setError(String(e));
@@ -60,7 +29,6 @@ export default function App() {
     }
   }
 
-  const totalBytes = findings?.reduce((s, f) => s + f.size, 0) ?? 0;
   const groups = findings ? groupByCategory(findings) : [];
 
   return (
@@ -97,7 +65,7 @@ export default function App() {
           <>
             <p className="status">
               Findings: <strong>{findings.length.toLocaleString()}</strong> files,{" "}
-              <strong>{formatMiB(totalBytes)}</strong>
+              <strong>{formatMiB(totalBytes(findings))}</strong>
             </p>
             <table className="categories">
               <thead>

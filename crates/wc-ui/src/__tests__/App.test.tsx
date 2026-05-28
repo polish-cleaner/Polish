@@ -1,0 +1,79 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App from "../App";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(),
+}));
+
+import { invoke } from "@tauri-apps/api/core";
+const invokeMock = vi.mocked(invoke);
+
+const envFixture = {
+  has_npm: true,
+  has_pnpm: false,
+  has_cargo: true,
+  has_wsl: false,
+  has_chrome: true,
+  has_edge: false,
+  has_firefox: false,
+  windows_build: null,
+};
+
+const findingsFixture = [
+  { path: "C:\\a\\foo", size: 1_048_576, category_id: "dev.npm.cache" },
+  { path: "C:\\a\\bar", size: 2_097_152, category_id: "dev.npm.cache" },
+  { path: "C:\\b\\baz", size: 524_288, category_id: "windows.temp" },
+];
+
+beforeEach(() => {
+  invokeMock.mockReset();
+  invokeMock.mockImplementation((cmd: string) => {
+    if (cmd === "detect_env") return Promise.resolve(envFixture);
+    if (cmd === "scan") return Promise.resolve(findingsFixture);
+    return Promise.reject(new Error(`unknown command: ${cmd}`));
+  });
+});
+
+describe("App", () => {
+  it("renders header", () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: /Polish/i })).toBeInTheDocument();
+  });
+
+  it("loads environment on mount and renders detected tools", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText(/npm: ✓/)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/pnpm: ✗/)).toBeInTheDocument();
+    expect(screen.getByText(/chrome: ✓/)).toBeInTheDocument();
+  });
+
+  it("scan button is enabled before scanning, shows table after click", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const button = screen.getByRole("button", { name: /Scan/i });
+    expect(button).not.toBeDisabled();
+    await user.click(button);
+    await waitFor(() => {
+      expect(screen.getByText("dev.npm.cache")).toBeInTheDocument();
+    });
+    expect(screen.getByText("windows.temp")).toBeInTheDocument();
+    expect(screen.getByText(/Findings:/)).toBeInTheDocument();
+  });
+
+  it("surfaces an error if scan rejects", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "detect_env") return Promise.resolve(envFixture);
+      return Promise.reject(new Error("scan blew up"));
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /Scan/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/scan blew up/)).toBeInTheDocument();
+    });
+  });
+});
