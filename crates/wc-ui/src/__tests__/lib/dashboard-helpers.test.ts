@@ -3,9 +3,14 @@ import {
   detectedToolCount,
   envFlags,
   findingsToDonut,
+  topNCategories,
+  findingsToTableRows,
+  activityHeatmapBuckets,
+  driveStatus,
 } from "../../lib/dashboard-helpers";
 import type { Environment } from "../../types/environment";
 import type { Finding } from "../../types/finding";
+import type { ActivityCell } from "../../types/activity-heatmap";
 
 const ENV_ALL: Environment = {
   has_npm: true,
@@ -88,5 +93,108 @@ describe("findingsToDonut", () => {
 
   it("returns empty list when no findings", () => {
     expect(findingsToDonut([])).toEqual([]);
+  });
+});
+
+describe("topNCategories", () => {
+  const findings: Finding[] = [
+    { path: "a", size: 100, category_id: "windows.temp" },
+    { path: "b", size: 500, category_id: "dev.npm.cache" },
+    { path: "c", size:  50, category_id: "browser.chrome.cache" },
+    { path: "d", size: 200, category_id: "dev.pnpm.store" },
+  ];
+
+  it("returns top-N sorted by size desc", () => {
+    const rows = topNCategories(findings, 3);
+    expect(rows.map((r) => r.bytes)).toEqual([500, 200, 100]);
+  });
+
+  it("returns empty list when no findings", () => {
+    expect(topNCategories([], 5)).toEqual([]);
+  });
+
+  it("caps at N rows", () => {
+    expect(topNCategories(findings, 2)).toHaveLength(2);
+  });
+
+  it("labels resolve via labelForCategory", () => {
+    const rows = topNCategories(findings, 1);
+    expect(rows[0].label).toBe("npm cache");
+  });
+});
+
+describe("findingsToTableRows", () => {
+  const findings: Finding[] = [
+    { path: "a", size: 100, category_id: "windows.temp" },
+    { path: "b", size: 500, category_id: "dev.npm.cache" },
+    { path: "c", size:  50, category_id: "windows.temp" },
+  ];
+
+  it("aggregates files per category", () => {
+    const rows = findingsToTableRows(findings);
+    const tempRow = rows.find((r) => r.id === "windows.temp");
+    expect(tempRow?.files).toBe(2);
+  });
+
+  it("sorts by bytes desc and caps at limit", () => {
+    const rows = findingsToTableRows(findings, 1);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe("dev.npm.cache");
+  });
+
+  it("returns empty for no findings", () => {
+    expect(findingsToTableRows([])).toEqual([]);
+  });
+});
+
+describe("activityHeatmapBuckets", () => {
+  const cells: ActivityCell[] = [
+    { date: "May 1", bytes: 0,                scanned: true  },
+    { date: "May 2", bytes: 1 * 1024 ** 3,    scanned: true  },
+    { date: "May 3", bytes: 10 * 1024 ** 3,   scanned: true  },
+    { date: "May 4", bytes: 0,                scanned: false },
+  ];
+
+  it("returns 0 intensity for clean-scanned days", () => {
+    expect(activityHeatmapBuckets(cells)[0].intensity).toBe(0);
+  });
+
+  it("returns 0 intensity for no-scan days", () => {
+    const b = activityHeatmapBuckets(cells)[3];
+    expect(b.intensity).toBe(0);
+    expect(b.scanned).toBe(false);
+  });
+
+  it("returns intensity 4 for peak day", () => {
+    const b = activityHeatmapBuckets(cells)[2];
+    expect(b.intensity).toBe(4);
+  });
+
+  it("returns intensity 1-2 for small fractions of peak", () => {
+    const b = activityHeatmapBuckets(cells)[1];
+    expect(b.intensity).toBeGreaterThanOrEqual(1);
+    expect(b.intensity).toBeLessThanOrEqual(2);
+  });
+
+  it("returns [] for empty input", () => {
+    expect(activityHeatmapBuckets([])).toEqual([]);
+  });
+});
+
+describe("driveStatus", () => {
+  it("returns 'ok' below 70% used", () => {
+    expect(driveStatus(50, 100)).toBe("ok");
+  });
+  it("returns 'warn' between 70% and 90%", () => {
+    expect(driveStatus(80, 100)).toBe("warn");
+  });
+  it("returns 'danger' above 90%", () => {
+    expect(driveStatus(95, 100)).toBe("danger");
+  });
+  it("returns 'ok' when total is 0", () => {
+    expect(driveStatus(0, 0)).toBe("ok");
+  });
+  it("returns 'danger' at exactly 90%", () => {
+    expect(driveStatus(90, 100)).toBe("danger");
   });
 });

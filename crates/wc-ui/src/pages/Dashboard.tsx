@@ -5,28 +5,23 @@ import Card from "../components/ui/Card";
 import Progress from "../components/ui/Progress";
 import Segmented from "../components/ui/Segmented";
 import Hero from "../components/dashboard/Hero";
-import RecoverableCard from "../components/dashboard/RecoverableCard";
-import CategoryBreakdown from "../components/dashboard/CategoryBreakdown";
-import RecoveryTrend from "../components/dashboard/RecoveryTrend";
-import EnvironmentTile from "../components/dashboard/EnvironmentTile";
+import DashboardWidgetGrid from "../components/dashboard/DashboardWidgetGrid";
 import QuickActionsRow from "../components/dashboard/QuickActionsRow";
 import { useEnvironmentQuery } from "../hooks/useEnvironment";
 import { useScanMutation } from "../hooks/useScan";
 import { useRoute } from "../hooks/useRoute";
 import { stagger } from "../lib/motion";
 import { groupByCategory, totalBytes } from "../lib/format";
+import { buildDashboardData } from "../lib/dashboard-data";
 import {
   MIDLIFE_ENVIRONMENT,
   MIDLIFE_FINDINGS,
-  MIDLIFE_TREND,
 } from "../lib/fixtures/dashboard";
 import type { DashboardMode } from "../types/dashboard";
 
 const PAGE_STAGGER = stagger(0, 0.06);
 const PAGE_INNER_CLASS = "max-w-[1240px] mx-auto px-10 pt-10 pb-16";
 const TOOLBAR_CLASS = "flex justify-end mb-6";
-const CHARTS_ROW_CLASS =
-  "grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-[14px]";
 
 const MODE_OPTIONS = [
   { value: "live", label: "Live" },
@@ -34,11 +29,13 @@ const MODE_OPTIONS = [
 ] as const;
 
 /**
- * Editorial Dashboard. Mirrors the prototype dashboard.jsx
- * composition exactly — hero strip / KPI card / chart row /
- * scanner-coverage tile / quick-actions row. The Segmented control
- * (Live | Preview design) sits in a slim toolbar above the hero so
- * the editorial wordmark is not interrupted.
+ * Editorial Dashboard. Mirrors the prototype dashboard.jsx widget set:
+ * Hero → KpiBand → CategoryBreakdown + RecoveryTrend → Opportunities
+ * + DriveGauge → ActivityHeatmap + EnvironmentTile → TopReclaimTable
+ * → QuarantineSummary + FormatPrepCta → QuickActionsRow. The
+ * Segmented control above the hero swaps in fixture data so the
+ * editorial layout renders even before a real scan. Widget grid is
+ * composed in DashboardWidgetGrid to keep this page within the cap.
  */
 export default function Dashboard() {
   const [mode, setMode] = useState<DashboardMode>("live");
@@ -55,6 +52,7 @@ export default function Dashboard() {
     () => groupByCategory(findings).length,
     [findings],
   );
+  const data = useMemo(() => buildDashboardData(mode, findings), [mode, findings]);
 
   const showLiveEmpty =
     mode === "live" && !scanMutation.isPending && liveFindings.length === 0;
@@ -114,17 +112,15 @@ export default function Dashboard() {
           </Card>
         ) : (
           <>
-            <RecoverableCard
-              totalBytes={total}
+            <DashboardWidgetGrid
               findings={findings}
-              onOpenClean={() => setRoute("clean")}
-              onRunLight={() => setRoute("clean")}
+              env={env}
+              totalBytes={total}
+              data={data}
+              onClean={() => setRoute("clean")}
+              onQuarantine={() => setRoute("quarantine")}
+              onFormatPrep={() => setRoute("format-prep")}
             />
-            <div className={CHARTS_ROW_CLASS}>
-              <CategoryBreakdown findings={findings} />
-              <RecoveryTrend points={MIDLIFE_TREND} />
-            </div>
-            <EnvironmentTile env={env} />
             <QuickActionsRow
               onVerify={() => setRoute("quarantine")}
               onRestore={() => setRoute("quarantine")}

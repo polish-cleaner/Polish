@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import Dashboard from "../../pages/Dashboard";
+import TooltipProvider from "../../components/ui/TooltipProvider";
 import { useRoute } from "../../hooks/useRoute";
 import { makeQueryWrapper } from "../test-utils/withQuery";
 
@@ -34,7 +36,14 @@ beforeEach(() => {
 });
 
 function renderDashboard() {
-  const { Wrapper } = makeQueryWrapper();
+  const { Wrapper: QueryWrapper } = makeQueryWrapper();
+  function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <QueryWrapper>
+        <TooltipProvider>{children}</TooltipProvider>
+      </QueryWrapper>
+    );
+  }
   return render(<Dashboard />, { wrapper: Wrapper });
 }
 
@@ -68,6 +77,36 @@ describe("Dashboard", () => {
     expect(screen.getByText(/Where the space lives/i)).toBeInTheDocument();
     expect(screen.getByText(/Recovery trend/i)).toBeInTheDocument();
     expect(screen.getByText(/Scanner coverage/i)).toBeInTheDocument();
+  });
+
+  it("Preview mode renders all new widgets (KPI / opportunities / heatmap / drives / table / quarantine / format-prep)", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.click(screen.getByRole("tab", { name: /Preview design/ }));
+    expect(await screen.findByText(/Reclaimable now/i)).toBeInTheDocument();
+    expect(screen.getByText(/Largest opportunities/i)).toBeInTheDocument();
+    expect(screen.getByText(/30-day activity/i)).toBeInTheDocument();
+    expect(screen.getByText(/All drives/i)).toBeInTheDocument();
+    expect(screen.getByText(/Top reclaim opportunities/i)).toBeInTheDocument();
+    expect(screen.getByText(/Prepare for format/i)).toBeInTheDocument();
+  });
+
+  it("Open quarantine in QuarantineSummary routes to 'quarantine'", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.click(screen.getByRole("tab", { name: /Preview design/ }));
+    const btn = await screen.findByRole("button", { name: /Open quarantine/i });
+    await user.click(btn);
+    expect(useRoute.getState().route).toBe("quarantine");
+  });
+
+  it("Start the wizard in FormatPrepCta routes to 'format-prep'", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+    await user.click(screen.getByRole("tab", { name: /Preview design/ }));
+    const btn = await screen.findByRole("button", { name: /Start the wizard/i });
+    await user.click(btn);
+    expect(useRoute.getState().route).toBe("format-prep");
   });
 
   it("clicking Run scan in Live mode fires the scan command", async () => {

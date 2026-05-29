@@ -1,6 +1,13 @@
 import type { Environment } from "../types/environment";
 import type { Finding } from "../types/finding";
 import type { DonutSegment } from "../types/charts";
+import type { OpportunityRow } from "../types/largest-opportunities";
+import type { ReclaimTableRow } from "../types/top-reclaim-table";
+import type {
+  ActivityCell,
+  HeatmapBucket,
+} from "../types/activity-heatmap";
+import type { DriveStatus } from "../types/drive-gauge";
 import { labelForCategory } from "./fixtures/dashboard";
 import { groupByCategory } from "./format";
 
@@ -89,4 +96,77 @@ export function findingsToDonut(
     }
   }
   return segments;
+}
+
+/**
+ * Top-N reclaimable categories by size. Drives the LargestOpportunities
+ * bar list. Sorted by bytes descending; smaller tails dropped (NOT
+ * pooled — the bar widget shows only the headline opportunities).
+ */
+export function topNCategories(
+  findings: ReadonlyArray<Finding>,
+  n: number,
+): OpportunityRow[] {
+  const groups = groupByCategory(findings as Finding[]);
+  return groups.slice(0, n).map((g) => ({
+    id: g.id,
+    label: labelForCategory(g.id),
+    bytes: g.size,
+  }));
+}
+
+/**
+ * Convert a Finding list into the TopReclaimTable row shape.
+ * Sorted by bytes desc, capped at `limit`.
+ */
+export function findingsToTableRows(
+  findings: ReadonlyArray<Finding>,
+  limit = 6,
+): ReclaimTableRow[] {
+  const groups = groupByCategory(findings as Finding[]);
+  return groups.slice(0, limit).map((g) => ({
+    id: g.id,
+    category: labelForCategory(g.id),
+    files: g.count,
+    bytes: g.size,
+  }));
+}
+
+/**
+ * Translate raw activity cells into the colored-bucket shape the
+ * heatmap renders. Buckets are 0-4 (0 = no scan / clean, 4 = peak).
+ */
+export function activityHeatmapBuckets(
+  cells: ReadonlyArray<ActivityCell>,
+): HeatmapBucket[] {
+  if (cells.length === 0) return [];
+  const peak = Math.max(...cells.map((c) => c.bytes), 1);
+  return cells.map((c) => {
+    let intensity: 0 | 1 | 2 | 3 | 4 = 0;
+    if (c.scanned && c.bytes > 0) {
+      const r = c.bytes / peak;
+      if (r > 0.66) intensity = 4;
+      else if (r > 0.33) intensity = 3;
+      else if (r > 0.15) intensity = 2;
+      else intensity = 1;
+    }
+    return {
+      date: c.date,
+      bytes: c.bytes,
+      scanned: c.scanned,
+      intensity,
+    };
+  });
+}
+
+const STATUS_WARN_THRESHOLD = 0.7;
+const STATUS_DANGER_THRESHOLD = 0.9;
+
+/** Percent-used → traffic-light status used by DriveGauge bars. */
+export function driveStatus(used: number, total: number): DriveStatus {
+  if (total <= 0) return "ok";
+  const ratio = used / total;
+  if (ratio >= STATUS_DANGER_THRESHOLD) return "danger";
+  if (ratio >= STATUS_WARN_THRESHOLD) return "warn";
+  return "ok";
 }

@@ -1,5 +1,9 @@
 import type { Finding } from "../../types/finding";
 import type { Environment } from "../../types/environment";
+import type { OpportunityRow } from "../../types/largest-opportunities";
+import type { ActivityCell } from "../../types/activity-heatmap";
+import type { DriveRow } from "../../types/drive-gauge";
+import type { ReclaimTableRow } from "../../types/top-reclaim-table";
 
 /**
  * "Mid-life PC" fixture scenario ported from the prototype
@@ -116,3 +120,67 @@ export const MIDLIFE_TREND: { day: string; bytes: number }[] = [
   { day: "May 11", bytes: 22.1 * GIB },
   { day: "May 25", bytes: 14.2 * GIB },
 ];
+
+/** KPI band scenario numbers — prototype mid-life PC at 14m ago. */
+export const MIDLIFE_KPIS = {
+  reclaimable_bytes: 41.8 * GIB,
+  drive_free_bytes: 4.0 * GIB,
+  drive_total_bytes: 375 * GIB,
+  quarantine_bytes: 43.1 * GIB,
+  freed_90d_bytes: 91.9 * GIB,
+  category_count: 12,
+  cleans_count: 8,
+} as const;
+
+/** Top opportunities — sorted desc, top 6 from the prototype CATEGORIES table. */
+export const MIDLIFE_OPPORTUNITIES: OpportunityRow[] = [
+  { id: "ai.lmstudio.models",   label: "LM Studio cached models",  bytes: 23.7 * GIB },
+  { id: "app.docker.unused",    label: "Docker unused images",     bytes: 12.1 * GIB },
+  { id: "windows.system.old",   label: "Windows.old",              bytes: 11.4 * GIB },
+  { id: "dev.pnpm.store",       label: "pnpm store",               bytes:  8.4 * GIB },
+  { id: "windows.dism.super",   label: "Superseded components",    bytes:  6.8 * GIB },
+  { id: "windows.temp",         label: "System temp files",        bytes:  4.2 * GIB },
+];
+
+/** 30-day scan activity — deterministic pattern from prototype DAY_ACTIVITY. */
+export const MIDLIFE_ACTIVITY: ActivityCell[] = (() => {
+  const findings = [
+    0,    0.4,  0,   2.1, 0,   0,   1.8,
+    0.6,  0,    3.2, 0,   1.1, 0,   0,
+    14.0, 0,    0.8, 0,   2.3, 0,   1.4,
+    0,    6.0,  0,   1.0, 0,   3.5, 41.8, null, null,
+  ];
+  const out: ActivityCell[] = [];
+  for (let i = 0; i < 30; i += 1) {
+    const v = findings[i];
+    out.push({
+      date: `May ${i + 1}`,
+      bytes: v === null ? 0 : (v as number) * GIB,
+      scanned: v !== null,
+    });
+  }
+  return out;
+})();
+
+/** Drives — prototype DRIVES table (system + work + media). */
+export const MIDLIFE_DRIVES: DriveRow[] = [
+  { id: "C", label: "C:", name: "Windows", used_bytes: 371 * GIB, total_bytes: 375 * GIB },
+  { id: "D", label: "D:", name: "Work",    used_bytes:  29 * GIB, total_bytes:  99 * GIB },
+];
+
+/** Top reclaim rows — drives the TopReclaimTable preview render. */
+export const MIDLIFE_TABLE_ROWS: ReclaimTableRow[] = [
+  { id: "ai.lmstudio.models",  category: "LM Studio cached models", files:    4, bytes: 23.7 * GIB, last_seen: "14m ago" },
+  { id: "app.docker.unused",   category: "Docker unused images",    files:  412, bytes: 12.1 * GIB, last_seen: "14m ago" },
+  { id: "windows.system.old",  category: "Windows.old",             files:    1, bytes: 11.4 * GIB, last_seen: "14m ago" },
+  { id: "dev.pnpm.store",      category: "pnpm store",              files: 3284, bytes:  8.4 * GIB, last_seen: "14m ago" },
+  { id: "windows.dism.super",  category: "Superseded components",   files:   42, bytes:  6.8 * GIB, last_seen: "14m ago" },
+  { id: "windows.temp",        category: "System temp files",       files: 4821, bytes:  4.2 * GIB, last_seen: "14m ago" },
+];
+
+/** Quarantine snapshot — count of bundles + total restorable size. */
+export const MIDLIFE_QUARANTINE = {
+  bundle_count: 3,
+  total_bytes: 43.1 * GIB,
+  days_until_purge: 4,
+} as const;
