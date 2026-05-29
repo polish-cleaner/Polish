@@ -39,12 +39,15 @@ function renderDashboard() {
 }
 
 describe("Dashboard", () => {
-  it("renders the page title with the overview accent", async () => {
+  it("renders the editorial hero headline as the page h1", async () => {
     renderDashboard();
+    // The hero IS the page title — matches the prototype's
+    // "You can reclaim <em>X GB</em> across N categories." treatment.
     expect(
-      screen.getByRole("heading", { level: 1, name: /Dashboard/ }),
+      screen.getByRole("heading", { level: 1, name: /You can reclaim/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText("overview")).toBeInTheDocument();
+    // Small section-label strip above the headline.
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
   it("defaults to Live mode and shows the run-scan empty state", async () => {

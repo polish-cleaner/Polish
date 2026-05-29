@@ -10,12 +10,22 @@ import { findingsToDonut } from "../../lib/dashboard-helpers";
 import type { RecoverableCardProps } from "../../types/dashboard-widget";
 
 const TOP_CHIPS = 4;
+const CARD_CLASS = "p-[22px] flex flex-col gap-4";
+const HEADER_CLASS = "flex items-center gap-2";
+const LABEL_CLASS =
+  "font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted font-medium";
+const CHIP_LABEL_CLASS = "text-ink-soft";
+const CHIP_VALUE_CLASS = "font-mono text-ink ml-2";
+const CHIP_UNIT_CLASS = "text-ink-muted ml-[2px]";
+const ACTIONS_CLASS = "flex flex-wrap gap-2 mt-1";
 
 /**
- * Hero card. Big mono count-up number, breakdown chips for the top
- * categories, and the two primary CTA buttons. Mirrors the prototype's
- * "recoverable total" widget but rebuilt entirely in Tailwind utilities
- * sourced from design tokens.
+ * KPI-styled "Reclaimable now" card. Mirrors the prototype's
+ * primary KPI tile: tiny icon + small-caps label header, big mono
+ * count-up number with smaller muted unit, breakdown chips for the
+ * top categories, and the two primary action buttons. Padding,
+ * type sizes, and gaps match Polish.html `.card` + `.label` +
+ * `.num-display` design tokens exactly.
  */
 export default function RecoverableCard({
   totalBytes,
@@ -25,22 +35,19 @@ export default function RecoverableCard({
 }: RecoverableCardProps) {
   const headline = bytesToGiB(totalBytes);
   const chips = findingsToDonut(findings).slice(0, TOP_CHIPS);
-
   return (
     <motion.div variants={fadeUp}>
-      <Card className="p-7 flex flex-col gap-6">
-        <div className="flex items-baseline gap-3">
-          <Sparkles size={14} className="text-accent" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-[0.16em] uppercase text-ink-muted">
-            Recoverable now
-          </span>
-        </div>
+      <Card className={CARD_CLASS}>
+        <header className={HEADER_CLASS}>
+          <Sparkles size={13} className="text-accent" aria-hidden="true" />
+          <span className={LABEL_CLASS}>Recoverable now</span>
+        </header>
         <NumDisplay
           value={headline}
           unit="GB"
           animate
           fractionDigits={1}
-          className="text-[44px] text-ink"
+          className="text-[30px] text-ink"
         />
         {chips.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -48,25 +55,26 @@ export default function RecoverableCard({
               const fmt = smartBytes(c.value);
               return (
                 <Badge key={c.id} variant="default">
-                  <span className="text-ink-soft">{c.label}</span>
-                  <span className="font-mono text-ink ml-2">
+                  <span className={CHIP_LABEL_CLASS}>{c.label}</span>
+                  <span className={CHIP_VALUE_CLASS}>
                     {fmt.num}
-                    <span className="text-ink-muted ml-[2px]">{fmt.unit}</span>
+                    <span className={CHIP_UNIT_CLASS}>{fmt.unit}</span>
                   </span>
                 </Badge>
               );
             })}
           </div>
         )}
-        <div className="flex flex-wrap gap-3">
+        <div className={ACTIONS_CLASS}>
           <Button
             variant="primary"
+            size="sm"
             onClick={onRunLight}
-            trailing={<ArrowRight size={13} aria-hidden="true" />}
+            trailing={<ArrowRight size={12} aria-hidden="true" />}
           >
             Run Light cleanup
           </Button>
-          <Button variant="ghost" onClick={onOpenClean}>
+          <Button variant="ghost" size="sm" onClick={onOpenClean}>
             Open Clean wizard
           </Button>
         </div>

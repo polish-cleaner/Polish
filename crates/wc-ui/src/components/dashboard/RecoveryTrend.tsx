@@ -8,12 +8,18 @@ import { bytesToGiB } from "../../lib/format";
 import type { RecoveryTrendProps } from "../../types/dashboard-widget";
 
 const WIDTH = 340;
-const HEIGHT = 96;
+const HEIGHT = 88;
+
+const CARD_CLASS = "p-[22px] flex flex-col gap-[14px] h-full";
+const HEADER_TITLE_CLASS =
+  "font-medium text-[10.5px] tracking-[0.12em] uppercase text-ink-muted mb-1";
+const HEADER_SUB_CLASS = "text-[12px] text-ink-muted";
 
 /**
- * 12-week recovery trend area chart. Animates via Framer's
- * `motion.path pathLength` from 0 → 1 over `DURATION_SLOW` on mount.
- * Reduced-motion snaps to the final state.
+ * 12-week recovery trend area chart mirroring the prototype's
+ * "Reclaim trend" widget. Header + big stat + 88px area sparkline
+ * with hairline x-axis and dot markers. Animates via Framer's
+ * motion.path `pathLength` from 0 → 1 over DURATION_SLOW.
  *
  * Pure path math lives in `src/lib/charts.ts` per Rule 4.
  */
@@ -22,19 +28,14 @@ export default function RecoveryTrend({ points }: RecoveryTrendProps) {
   const path = pointsToPath(points, WIDTH, HEIGHT);
   const total = totalTrendBytes(points);
   const totalGiB = bytesToGiB(total);
-
   return (
     <motion.div variants={fadeUp}>
-      <Card className="p-7 flex flex-col gap-3 h-full">
-        <header className="flex items-baseline justify-between">
-          <span className="font-mono text-[11px] tracking-[0.16em] uppercase text-ink-muted">
-            Recovery trend
-          </span>
-          <span className="font-mono text-[11px] text-ink-soft">
-            past 12 weeks
-          </span>
+      <Card className={CARD_CLASS}>
+        <header>
+          <div className={HEADER_TITLE_CLASS}>Recovery trend</div>
+          <div className={HEADER_SUB_CLASS}>Past 12 weeks · weekly total</div>
         </header>
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-[6px]">
           <NumDisplay
             value={totalGiB}
             unit="GB"
@@ -42,22 +43,30 @@ export default function RecoveryTrend({ points }: RecoveryTrendProps) {
             fractionDigits={1}
             className="text-[28px] text-ink"
           />
-          <span className="text-[12px] text-status-good font-medium">
-            cumulative
+          <span className="text-[11px] text-status-good font-medium ml-[6px]">
+            ↑ 31% vs prior 12w
           </span>
         </div>
-        <div className="flex-1 min-h-[100px] mt-2">
+        <div className="flex-1 min-h-[88px]">
           <svg
             width="100%"
             viewBox={path.viewBox}
             preserveAspectRatio="none"
-            style={{ display: "block" }}
+            style={{ display: "block", overflow: "visible" }}
             aria-label="Recovery trend area chart"
           >
+            <line
+              x1={4}
+              y1={HEIGHT - 4}
+              x2={WIDTH - 4}
+              y2={HEIGHT - 4}
+              stroke="var(--line)"
+              strokeWidth={1}
+            />
             <motion.path
               d={path.areaD}
               fill="var(--accent)"
-              fillOpacity={0.10}
+              fillOpacity={0.1}
               initial={reduced ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{

@@ -53,7 +53,10 @@ describe("App shell", () => {
   it("defaults to the Dashboard route on mount (Dashboard page is shown)", async () => {
     renderApp();
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 1, name: /Dashboard/ })).toBeInTheDocument();
+      // Dashboard hero IS the page h1 (prototype-matched).
+      expect(
+        screen.getByRole("heading", { level: 1, name: /You can reclaim/ }),
+      ).toBeInTheDocument();
     });
   });
 

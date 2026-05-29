@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import PageLayout from "../components/PageLayout";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Progress from "../components/ui/Progress";
@@ -24,6 +23,10 @@ import {
 import type { DashboardMode } from "../types/dashboard";
 
 const PAGE_STAGGER = stagger(0, 0.06);
+const PAGE_INNER_CLASS = "max-w-[1240px] mx-auto px-10 pt-10 pb-16";
+const TOOLBAR_CLASS = "flex justify-end mb-6";
+const CHARTS_ROW_CLASS =
+  "grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-[14px]";
 
 const MODE_OPTIONS = [
   { value: "live", label: "Live" },
@@ -31,10 +34,11 @@ const MODE_OPTIONS = [
 ] as const;
 
 /**
- * Editorial Dashboard. Composes the hero / recoverable / charts / env
- * sub-widgets per Phase 4 spec. A segmented switch toggles between
- * live IPC data (default) and the prototype "midlife" fixture so the
- * user can validate the design without an active scan.
+ * Editorial Dashboard. Mirrors the prototype dashboard.jsx
+ * composition exactly — hero strip / KPI card / chart row /
+ * scanner-coverage tile / quick-actions row. The Segmented control
+ * (Live | Preview design) sits in a slim toolbar above the hero so
+ * the editorial wordmark is not interrupted.
  */
 export default function Dashboard() {
   const [mode, setMode] = useState<DashboardMode>("live");
@@ -56,27 +60,28 @@ export default function Dashboard() {
     mode === "live" && !scanMutation.isPending && liveFindings.length === 0;
 
   return (
-    <PageLayout
-      title="Dashboard"
-      titleAccent="overview"
-      subtitle="Polish your PC."
-      actions={
+    <div className={PAGE_INNER_CLASS}>
+      <div className={TOOLBAR_CLASS}>
         <Segmented
           aria-label="Dashboard data mode"
           value={mode}
           onValueChange={(v) => setMode(v as DashboardMode)}
           options={MODE_OPTIONS}
         />
-      }
-    >
+      </div>
       <motion.div
         variants={PAGE_STAGGER}
         initial="initial"
         animate="animate"
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-[22px]"
       >
-        <Hero env={env} totalBytes={total} categoryCount={categoryCount} />
-
+        <Hero
+          env={env}
+          totalBytes={total}
+          categoryCount={categoryCount}
+          onRescan={() => scanMutation.mutate()}
+          onReviewClean={() => setRoute("clean")}
+        />
         {showLiveEmpty ? (
           <Card className="p-8 flex flex-col items-center text-center gap-4 max-w-[560px] mx-auto">
             <p className="font-display text-[22px] m-0 text-ink">
@@ -103,7 +108,7 @@ export default function Dashboard() {
             )}
           </Card>
         ) : scanMutation.isPending && mode === "live" ? (
-          <Card className="p-6 flex flex-col gap-3">
+          <Card className="p-[22px] flex flex-col gap-3">
             <p className="text-[13px] text-ink-soft m-0">Scanning…</p>
             <Progress indeterminate ariaLabel="Scan in progress" />
           </Card>
@@ -115,7 +120,7 @@ export default function Dashboard() {
               onOpenClean={() => setRoute("clean")}
               onRunLight={() => setRoute("clean")}
             />
-            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
+            <div className={CHARTS_ROW_CLASS}>
               <CategoryBreakdown findings={findings} />
               <RecoveryTrend points={MIDLIFE_TREND} />
             </div>
@@ -128,6 +133,6 @@ export default function Dashboard() {
           </>
         )}
       </motion.div>
-    </PageLayout>
+    </div>
   );
 }

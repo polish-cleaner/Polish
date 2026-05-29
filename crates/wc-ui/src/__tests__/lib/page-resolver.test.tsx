@@ -21,11 +21,13 @@ describe("resolvePage", () => {
     const { Wrapper } = makeQueryWrapper();
     const el = resolvePage("dashboard");
     render(el, { wrapper: Wrapper });
-    // Dashboard renders the PageLayout h1 with the "overview" italic accent.
+    // Dashboard's hero IS the page title — the prototype's
+    // "You can reclaim X GB across N categories." headline.
     expect(
-      screen.getByRole("heading", { level: 1, name: /Dashboard/ }),
+      screen.getByRole("heading", { level: 1, name: /You can reclaim/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText("overview")).toBeInTheDocument();
+    // Small section-label strip above the editorial headline.
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
   it("returns Home for the clean route (legacy scan UX)", () => {

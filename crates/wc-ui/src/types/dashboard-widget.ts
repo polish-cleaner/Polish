@@ -9,6 +9,10 @@ export interface HeroProps {
   totalBytes: number;
   /** Number of distinct categories with findings. */
   categoryCount: number;
+  /** Click handler for the "Rescan" ghost button (right of headline). */
+  onRescan?: () => void;
+  /** Click handler for the "Review & clean" primary button. */
+  onReviewClean?: () => void;
 }
 
 export interface RecoverableCardProps {

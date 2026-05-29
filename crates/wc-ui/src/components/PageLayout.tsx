@@ -1,8 +1,9 @@
 import type { PageLayoutProps } from "../types/page-layout";
 
 const INNER_CLASS = "max-w-[1240px] mx-auto px-10 pt-10 pb-16";
-const TITLE_CLASS = "display text-[44px] leading-none m-0 text-ink";
-const SUBTITLE_CLASS = "text-ink-soft mt-3 text-[14px] max-w-[56ch]";
+const TITLE_CLASS =
+  "font-display font-normal text-[44px] leading-none tracking-[-0.015em] m-0 text-ink";
+const SUBTITLE_CLASS = "text-ink-soft mt-3 text-[14px] max-w-[56ch] m-0";
 
 /**
  * Page chrome wrapper used by every page composed by App.tsx. Renders
